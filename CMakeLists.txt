@@ -11,8 +11,10 @@ set(HDRS
 if(WIN32)
     set (APP_NAME CodeGenerator)
 else()
-    set (APP_NAME CodeGenerator)
+    set (APP_NAME code_generator)
 endif()
+
+add_definitions("-D_CRT_SECURE_NO_WARNINGS")
 
 add_executable(${APP_NAME} ${SRCS} ${HDRS})
 
