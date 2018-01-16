@@ -137,9 +137,28 @@ void Record::AddField(uint32_t index, const char *value, uint32_t length)
 
 }
 
+Tag::Tag(const char *buffer, uint32_t length):
+    mNextTag(NULL)
+{
+    mBuffer = new uint8_t[length];
+    if (mBuffer != NULL)
+    {
+        memcpy(mBuffer, buffer, length);
+    }
+}
+
+Tag::~Tag()
+{
+    if (mBuffer != NULL)
+    {
+        delete mBuffer;
+    }
+}
+
 CodeGenerator::CodeGenerator():
-    mInputFile(NULL), mOutputFile(NULL), mTemplateFile(NULL), mParseState(0), mParseOutputOffset(0),
-    mParseFieldCount(0), mParseCharCount(0), mParseLineCount(0), mCurrentRecord(NULL), mNumberOfFields(10)
+    mInputFile(NULL), mOutputFile(NULL), mTemplateFile(NULL), mLogFile(NULL), mLogDest(stdout), mParseState(0),
+    mParseOutputOffset(0), mParseFieldCount(0), mParseCharCount(0), mParseLineCount(0), mCurrentRecord(NULL),
+    mNumberOfFields(10)
 {
 
 }
@@ -159,6 +178,11 @@ CodeGenerator::~CodeGenerator()
     if (mTemplateFile != NULL)
     {
         fclose(mTemplateFile);
+    }
+
+    if (mLogFile != NULL)
+    {
+        fclose(mLogFile);
     }
 }
 
@@ -289,7 +313,7 @@ int CodeGenerator::ParseCsvInputFile()
             for (index = 0; index < ret; index++)
             {
                 char c = (char)mParseBuffer[index];
-                
+
                 if (c == ':' || c == ',' || c == ';' || c == '|' || c == '\t')
                 {
                     if (linesScanned)
@@ -321,12 +345,12 @@ int CodeGenerator::ParseTemplateBlock(size_t length)
     {
         uint8_t mParseStatePrevious = mParseState;
         mParseState = templateStateTranstionTable[mParseState][charCompressionTable[mParseBuffer[index]]];
-        printf("[%4u:%2u] %2u (%c): %2u > %2u\n", 
-               mParseLineCount, 
+        fprintf(mLogDest, "[%4u:%2u] %2u (%c): %2u > %2u\n",
+               mParseLineCount,
                mParseCharCount,
-               mParseBuffer[index], 
-               mParseBuffer[index] > 0x20 ? mParseBuffer[index] : ' ', 
-               mParseStatePrevious, 
+               mParseBuffer[index],
+               mParseBuffer[index] > 0x20 ? mParseBuffer[index] : ' ',
+               mParseStatePrevious,
                mParseState);
         mParseCharCount++;
         switch (mParseState)
@@ -424,7 +448,7 @@ int CodeGenerator::ParseTemplateBlock(size_t length)
         case 14: /* 14 - Params name CR */
             if (mParseOutputOffset != 0)
             {
-                
+
                 mParseOutputOffset = 0;
             }
             mParseCharCount = 0;
@@ -486,7 +510,7 @@ int CodeGenerator::ParseTemplateInputFile()
 
 int CodeGenerator::ProcessTag(const char *tag, uint32_t tag_length)
 {
-    printf("TAG: %s\n", tag);
+    fprintf(mLogDest, "TAG: %s\n", tag);
 
     return 0;
 }
@@ -523,6 +547,21 @@ int CodeGenerator::Run(int argc, char **argv)
             printf("ERROR: Unable to create file: %s\n", argv[3]);
             Usage(argv[0]);
             return 1;
+        }
+
+        if (argc >= 5)
+        {
+            mLogFile = fopen(argv[4], "wb");
+            if (mLogFile == NULL)
+            {
+                printf("ERROR: Unable to create file: %s\n", argv[3]);
+                Usage(argv[0]);
+                return 1;
+            }
+            else
+            {
+                mLogDest = mLogFile;
+            }
         }
 
         result = ParseCsvInputFile();

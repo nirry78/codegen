@@ -5,7 +5,6 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
-#include <wmmintrin.h> 
 
 class Field
 {
@@ -25,8 +24,19 @@ class Record
     public:
                     Record(uint32_t numberOfFields);
                     ~Record();
-        
+
         void        AddField(uint32_t index, const char *value, uint32_t length);
+};
+
+class Tag
+{
+    private:
+        class Tag   *mNextTag;
+        uint8_t     *mBuffer;
+        uint32_t    mBufferLength;
+    public:
+                    Tag(const char *buffer, uint32_t length);
+                    ~Tag();
 };
 
 class CodeGenerator
@@ -35,6 +45,8 @@ class CodeGenerator
         FILE        *mInputFile;
         FILE        *mOutputFile;
         FILE        *mTemplateFile;
+        FILE        *mLogFile;
+        FILE        *mLogDest;
         uint8_t     mParseBuffer[4096];
         uint8_t     mParseOutput[1024];
         size_t      mParseOutputOffset;
