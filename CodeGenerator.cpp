@@ -1,5 +1,10 @@
 #include "CodeGenerator.h"
 
+#ifndef WIN32
+#define _strnicmp strncasecmp
+#define _strdup strdup
+#endif
+
 static const uint8_t charCompressionTable[256] = {
     /* NUL SOH STX ETX EOT ENQ ACK BEL BS  TAB LF  VT  FF  CR  SO  SI  */
        0,  1,  1,  1,  1,  1,  1,  1,  1,  2,  3,  1,  1,  4,  1,  1,
@@ -35,8 +40,8 @@ static const uint8_t cvsStateTranstionTable[12][19] = {
     {   0,  2,  2,  2,  2,  2,  3,  2,  2,   2,  2,  2,  2,  2,    2,  2,  2,  2,  2 }, /* 1 - Start " quote section */
     {   0,  2,  2,  2,  2,  2,  3,  2,  2,   2,  2,  2,  2,  2,    2,  2,  2,  2,  2 }, /* 2 - Inside " quote section */
     {   0, 11,  7,  9,  9,  7,  1,  4,  7,  11,  7,  7, 11, 11,   11, 11, 11,  7, 11 }, /* 3 - End " quote section */
-    {   0,  5,  5,  5,  5,  5,  6,  5,  5,   5,  5,  5,  5,  5,    5,  5,  5,  5,  5 }, /* 4 - Start ' quote section */
-    {   0,  5,  5,  5,  5,  5,  6,  5,  5,   5,  5,  5,  5,  5,    5,  5,  5,  5,  5 }, /* 5 - Inside ' quote section */
+    {   0,  5,  5,  5,  5,  5,  6,  6,  5,   5,  5,  5,  5,  5,    5,  5,  5,  5,  5 }, /* 4 - Start ' quote section */
+    {   0,  5,  5,  5,  5,  5,  6,  6,  5,   5,  5,  5,  5,  5,    5,  5,  5,  5,  5 }, /* 5 - Inside ' quote section */
     {   0, 11,  7,  9,  9,  7,  1,  4,  7,  11,  7,  7, 11, 11,   11, 11, 11,  7, 11 }, /* 6 - End ' quote section */
     {   0,  8,  7,  0,  0,  0,  1,  4,  7,   8,  7,  7,  8,  8,    8,  8,  8,  7,  8 }, /* 7 - Possible field end */
     {   0,  8,  7,  9,  9,  7, 11, 11,  7,   8,  7,  7,  8,  8,    8,  8,  8,  7,  8 }, /* 8 - Field value */
@@ -111,9 +116,13 @@ Field::~Field()
 }
 
 Record::Record(uint32_t numberOfFields):
-    mFieldList(NULL), mNumberOfFields(numberOfFields)
+    mNextRecord(NULL), mFieldList(NULL), mNumberOfFields(numberOfFields)
 {
-
+    mFieldList = (Field**) new size_t[numberOfFields];
+    if (mFieldList != NULL)
+    {
+        memset(mFieldList, 0, sizeof(Field*) * numberOfFields);
+    }
 }
 
 Record::~Record()
@@ -134,11 +143,82 @@ Record::~Record()
 
 void Record::AddField(uint32_t index, const char *value, uint32_t length)
 {
-
+    if (mFieldList != NULL && mFieldList[index] == NULL)
+    {
+        mFieldList[index] = new Field(value, length);
+    }
 }
 
-Tag::Tag(const char *buffer, uint32_t length):
-    mNextTag(NULL)
+int Record::Output(FILE *output, uint32_t index, TagStyle style, TagConvert convert)
+{
+    int result = -1;
+    Field *field = mFieldList[index];
+
+    if (field != NULL)
+    {
+        char *str = _strdup(field->GetValue());
+        char *c = str;
+
+        switch (style)
+        {
+            case TAG_STYLE_STANDARD:
+                break;
+            case TAG_STYLE_UPPERCASE:
+                while (*c != 0)
+                {
+                    if (*c >= 'a' && *c <= 'z')
+                    {
+                        *c = *c + 'A' - 'a';
+                    }
+                    c++;
+                }
+                break;
+            case TAG_STYLE_LOWERCASE:
+                while (*c != 0)
+                {
+                    if (*c >= 'A' && *c <= 'Z')
+                    {
+                        *c = *c - 'A' + 'a';
+                    }
+                    c++;
+                }
+                break;
+        }
+
+        switch (convert)
+        {
+            case TAG_CONVERT_NONE:
+                break;
+            case TAG_CONVERT_C:
+                c = str;
+
+                while (*c != 0)
+                {
+                    if (*c == '.')
+                    {
+                        *c = '_';
+                    }
+                    c++;
+                }
+                break;
+        }
+
+        fprintf(output, "%s", str);
+        free(str);
+
+        result = 0;
+    }
+
+    return result;
+}
+
+Tag::Tag(TagType tag_type, const uint8_t *buffer, uint32_t length):
+    mTagType(tag_type),
+    mBufferLength(length),
+    mNextTag(NULL),
+    mTagStyle(TAG_STYLE_STANDARD),
+    mTagConvert(TAG_CONVERT_NONE),
+    mName(NULL), mNameLength(0)
 {
     mBuffer = new uint8_t[length];
     if (mBuffer != NULL)
@@ -153,12 +233,136 @@ Tag::~Tag()
     {
         delete mBuffer;
     }
+
+    if (mName != NULL)
+    {
+        delete mName;
+    }
+}
+
+void Tag::Dump(FILE *output)
+{
+    switch (mTagType)
+    {
+        case TAG_TYPE_DATA:
+            fprintf(output, "TAG[DATA]\n");
+            break;
+        case TAG_TYPE_FOREACH_BEGIN:
+            fprintf(output, "TAG[FOREACH_BEGIN]\n");
+            break;
+        case TAG_TYPE_FOREACH_END:
+            fprintf(output, "TAG[FOREACH_END]\n");
+            break;
+        case TAG_TYPE_FIELD:
+            fprintf(output, "TAG[FIELD] Name:%s\n", mName ? (char*)mName : "N/A");
+            break;
+        case TAG_TYPE_FIELD_COUNT:
+            fprintf(output, "TAG[FIELD_COUNT]\n");
+            break;
+    }
+}
+
+bool Tag::IsNameEqual(const char *reference)
+{
+    bool result = false;
+
+    if (mName != NULL)
+    {
+        result = !_strnicmp(reference, (char*)mName, mNameLength);
+    }
+
+    return result;
+}
+
+bool Tag::IsValid()
+{
+    bool result = true;
+
+    switch (mTagType)
+    {
+        case TAG_TYPE_FIELD:
+            if (mName == NULL)
+            {
+                result = false;
+            }
+            break;
+    }
+
+    return result;
+}
+
+int Tag::Output(FILE *output)
+{
+    return fwrite(mBuffer, 1, mBufferLength, output) == mBufferLength ? 0 : -1;
+}
+
+int Tag::OutputField(FILE *output, Record *record, uint32_t index)
+{
+    int result = 0;
+
+    if (mName != NULL)
+    {
+        result = record->Output(output, index, mTagStyle, mTagConvert);
+    }
+    else
+    {
+        result = -1;
+    }
+
+    return result;
+}
+
+int Tag::SetFieldValue(TagFieldType fieldType, const uint8_t *buffer, uint32_t length)
+{
+    int result = 0;
+
+    switch (fieldType)
+    {
+        case TAG_FIELD_TYPE_NAME:
+        {
+            if (mName == NULL)
+            {
+                mName = new uint8_t[length];
+                if (mName != NULL)
+                {
+                    memcpy(mName, buffer, length);
+                    mNameLength = length;
+                }
+            }
+            else
+            {
+                result = -1;
+            }
+            break;
+        }
+        case TAG_FIELD_TYPE_STYLE:
+        {
+            if (!_strnicmp("upper", (char*)buffer, length) || !_strnicmp("uppercase", (char*)buffer, length))
+            {
+                mTagStyle = TAG_STYLE_UPPERCASE;
+            }
+            else if (!_strnicmp("lower", (char*)buffer, length) || !_strnicmp("lowercase", (char*)buffer, length))
+            {
+                mTagStyle = TAG_STYLE_LOWERCASE;
+            }
+        }
+        case TAG_FIELD_TYPE_CONVERT:
+        {
+            if (!_strnicmp("c-style", (char*)buffer, length))
+            {
+                mTagConvert = TAG_CONVERT_C;
+            }
+        }
+    }
+
+    return result;
 }
 
 CodeGenerator::CodeGenerator():
     mInputFile(NULL), mOutputFile(NULL), mTemplateFile(NULL), mLogFile(NULL), mLogDest(stdout), mParseState(0),
     mParseOutputOffset(0), mParseFieldCount(0), mParseCharCount(0), mParseLineCount(0), mCurrentRecord(NULL),
-    mNumberOfFields(10)
+    mRecordListHead(NULL), mRecordListTail(NULL), mRecordNames(NULL), mNumberOfFields(0), mTagListHead(NULL),
+    mTagListTail(NULL), mNextFieldType(TAG_FIELD_TYPE_NONE)
 {
 
 }
@@ -186,11 +390,24 @@ CodeGenerator::~CodeGenerator()
     }
 }
 
-int CodeGenerator::DumpOutputBuffer()
+int CodeGenerator::AddTag()
 {
     int result = 0;
+    Tag *tag = new Tag(TAG_TYPE_DATA, mParseOutput, mParseOutputOffset);
 
-    if (fwrite(mParseOutput, 1, mParseOutputOffset, mOutputFile) != mParseOutputOffset)
+    if (tag != NULL)
+    {
+        if (mTagListHead != NULL)
+        {
+            mTagListTail->SetNextTag(tag);
+        }
+        else
+        {
+            mTagListHead = tag;
+        }
+        mTagListTail = tag;
+    }
+    else
     {
         result = -1;
     }
@@ -198,6 +415,109 @@ int CodeGenerator::DumpOutputBuffer()
     mParseOutputOffset = 0;
 
     return result;
+}
+
+int CodeGenerator::FieldName(const uint8_t *buffer, uint32_t buffer_length)
+{
+    int result = 0;
+
+    if (!_strnicmp((const char*)buffer, "Name", buffer_length))
+    {
+        mNextFieldType = TAG_FIELD_TYPE_NAME;
+    }
+    else if (!_strnicmp((const char*)buffer, "Alignment", buffer_length))
+    {
+        mNextFieldType = TAG_FIELD_TYPE_ALIGNMENT;
+    }
+    else if (!_strnicmp((const char*)buffer, "Style", buffer_length))
+    {
+        mNextFieldType = TAG_FIELD_TYPE_STYLE;
+    }
+    else if (!_strnicmp((const char*)buffer, "Convert", buffer_length))
+    {
+        mNextFieldType = TAG_FIELD_TYPE_CONVERT;
+    }
+    else
+    {
+        result = -1;
+    }
+
+    return result;
+}
+
+int CodeGenerator::FieldValue(const uint8_t *buffer, uint32_t buffer_length)
+{
+    return mTagListTail->SetFieldValue(mNextFieldType, buffer, buffer_length);
+}
+
+int CodeGenerator::GenerateOutput()
+{
+    Tag *tag        = mTagListHead;
+    Tag *foreachTag = NULL;
+    int result      = 0;
+
+    fprintf(mLogDest, "Generating output...\n");
+
+    mCurrentRecord = NULL;
+
+    while (tag != NULL && result == 0)
+    {
+        switch (tag->GetTagType())
+        {
+            case TAG_TYPE_DATA:
+                result = tag->Output(mOutputFile);
+                break;
+            case TAG_TYPE_FOREACH_BEGIN:
+                if (foreachTag != NULL)
+                {
+                    fprintf(mLogDest, "[ERROR] Foreach tag found inside loop\n");
+                    result = -1;
+                }
+                else
+                {
+                    foreachTag      = tag;
+                    mCurrentRecord  = mRecordListHead;
+                }
+                break;
+            case TAG_TYPE_FOREACH_END:
+                mCurrentRecord = mCurrentRecord->GetNextRecord();
+                if (mCurrentRecord != NULL)
+                {
+                    tag = foreachTag;
+                }
+                else
+                {
+                    foreachTag = NULL;
+                }
+                break;
+            case TAG_TYPE_FIELD:
+                if (mCurrentRecord)
+                {
+                    for (uint32_t index = 0; index < mNumberOfFields; index++)
+                    {
+                        if (tag->IsNameEqual((const char*)mRecordNames[index]))
+                        {
+                            result = tag->OutputField(mOutputFile, mCurrentRecord, index);
+                            break;
+                        }
+                    }
+                }
+                else
+                {
+                    fprintf(mLogDest, "[ERROR] Not inside record loop\n");
+                    result = -1;
+                }
+                break;
+            case TAG_TYPE_FIELD_COUNT:
+                break;
+        }
+
+        tag = tag->GetNextTag();
+    }
+
+    fprintf(mLogDest, "Generating output complete\n");
+
+    return 0;
 }
 
 int CodeGenerator::ParseCsvBlock(const char delimiter, size_t length)
@@ -237,14 +557,21 @@ int CodeGenerator::ParseCsvBlock(const char delimiter, size_t length)
                 {
                     mParseOutput[mParseOutputOffset++] = 0;
 
-                    if (mCurrentRecord == NULL)
+                    if (mParseLineCount == 0)
                     {
-                        mCurrentRecord = new Record(mNumberOfFields);
+                        mRecordNames[mParseFieldCount] = _strdup((char*)mParseOutput);
                     }
-
-                    if (mCurrentRecord != NULL)
+                    else
                     {
-                        mCurrentRecord->AddField(mParseFieldCount, (const char*)mParseOutput, mParseOutputOffset);
+                        if (mCurrentRecord == NULL)
+                        {
+                            mCurrentRecord = new Record(mNumberOfFields);
+                        }
+
+                        if (mCurrentRecord != NULL)
+                        {
+                            mCurrentRecord->AddField(mParseFieldCount, (const char*)mParseOutput, mParseOutputOffset);
+                        }
                     }
 
                     mParseOutputOffset = 0;
@@ -262,15 +589,35 @@ int CodeGenerator::ParseCsvBlock(const char delimiter, size_t length)
                 mParseOutput[mParseOutputOffset++] = 0;
                 if (mParseOutputOffset > 1)
                 {
-                    if (mCurrentRecord == NULL)
+                    if (mParseLineCount == 0)
                     {
-                        mCurrentRecord = new Record(mNumberOfFields);
+                        mRecordNames[mParseFieldCount] = _strdup((char*)mParseOutput);
                     }
+                    else
+                    {
+                        if (mCurrentRecord == NULL)
+                        {
+                            mCurrentRecord = new Record(mNumberOfFields);
+                        }
 
-                    if (mCurrentRecord != NULL)
-                    {
-                        mCurrentRecord->AddField(mParseFieldCount, (const char*)mParseOutput, mParseOutputOffset);
+                        if (mCurrentRecord != NULL)
+                        {
+                            mCurrentRecord->AddField(mParseFieldCount, (const char*)mParseOutput, mParseOutputOffset);
+                        }
                     }
+                }
+
+                if (mCurrentRecord != NULL && mParseLineCount != 0)
+                {
+                    if (mRecordListHead != NULL)
+                    {
+                        mRecordListTail->SetNextRecord(mCurrentRecord);
+                    }
+                    else
+                    {
+                        mRecordListHead = mCurrentRecord;
+                    }
+                    mRecordListTail = mCurrentRecord;
                 }
 
                 mCurrentRecord = NULL;
@@ -300,13 +647,16 @@ int CodeGenerator::ParseCsvInputFile()
     uint32_t linesScanned = 0;
     uint8_t specialCharCounterInitial = 0;
     uint8_t specialCharCounterScanning = 0;
-    bool delimiterDetermined = true;
+    bool delimiterDetermined = false;
+    bool singleQuote = false;
+    bool doubleQuote = false;
+    char delimiter = 0;
 
     while ((ret = fread(mParseBuffer, 1, sizeof(mParseBuffer), mInputFile)) > 0)
     {
         if (delimiterDetermined)
         {
-            ParseCsvBlock(';', ret);
+            ParseCsvBlock(delimiter, ret);
         }
         else
         {
@@ -314,17 +664,48 @@ int CodeGenerator::ParseCsvInputFile()
             {
                 char c = (char)mParseBuffer[index];
 
-                if (c == ':' || c == ',' || c == ';' || c == '|' || c == '\t')
+                if (c == '\'')
                 {
-                    if (linesScanned)
+                    singleQuote = !singleQuote;
+                }
+                else if (c == '"')
+                {
+                    doubleQuote = !doubleQuote;
+                }
+                else if (!doubleQuote && !singleQuote && (c == ':' || c == ',' || c == ';' || c == '|' || c == '\t'))
+                {
+                    mNumberOfFields++;
+                    if (delimiter == 0)
                     {
-
-                    }
-                    else
-                    {
-
+                        delimiter = c;
                     }
                 }
+                else if (c == '\r' || c == '\n')
+                {
+                    mNumberOfFields++;
+                    if (delimiter != 0)
+                    {
+                        mRecordNames = (char**) new size_t[mNumberOfFields];
+                        if (mRecordNames != NULL)
+                        {
+                            memset(mRecordNames, 0, mNumberOfFields * sizeof(char*));
+                        }
+
+                        delimiterDetermined = true;
+                        fseek(mInputFile, 0, SEEK_SET);
+                    }
+                    break;
+                }
+            }
+
+            if (!delimiterDetermined)
+            {
+                result = -1;
+                break;
+            }
+            else
+            {
+                continue;
             }
         }
 
@@ -361,7 +742,7 @@ int CodeGenerator::ParseTemplateBlock(size_t length)
             mParseTagOnly = false;
             if (mParseOutputOffset == sizeof(mParseOutput))
             {
-                result = DumpOutputBuffer();
+                result = AddTag();
             }
             break;
         case 1: /* 3 - Field name start section */
@@ -369,7 +750,7 @@ int CodeGenerator::ParseTemplateBlock(size_t length)
             {
                 mParseTagOnly = true;
             }
-            result = DumpOutputBuffer();
+            result = AddTag();
             break;
         case 3: /* 3 - Field name continue section */
             mParseOutput[mParseOutputOffset++] = mParseBuffer[index];
@@ -386,7 +767,7 @@ int CodeGenerator::ParseTemplateBlock(size_t length)
         case 4: /* 4 - Field complete no parameters */
         case 7: /* 7 - Field complete @ */
             mParseOutput[mParseOutputOffset++] = 0;
-            result = ProcessTag((const char*)mParseOutput, mParseOutputOffset);
+            result = ProcessTag(mParseOutput, mParseOutputOffset);
             mParseOutputOffset = 0;
             if (!mParseTagOnly)
             {
@@ -401,7 +782,7 @@ int CodeGenerator::ParseTemplateBlock(size_t length)
             mParseOutput[mParseOutputOffset++] = mParseBuffer[index];
             if (mParseOutputOffset == sizeof(mParseOutput))
             {
-                result = DumpOutputBuffer();
+                result = AddTag();
             }
             break;
         case 10: /* 10 - CR>LF or LF>CR */
@@ -412,24 +793,31 @@ int CodeGenerator::ParseTemplateBlock(size_t length)
                 mParseOutput[mParseOutputOffset++] = mParseBuffer[index];
                 if (mParseOutputOffset == sizeof(mParseOutput))
                 {
-                    result = DumpOutputBuffer();
+                    result = AddTag();
                 }
             }
             mParseTagOnly = false;
             break;
         case 11: /* 11 - Params begin */
             mParseOutput[mParseOutputOffset++] = 0;
-            result = ProcessTag((const char*)mParseOutput, mParseOutputOffset);
+            result = ProcessTag(mParseOutput, mParseOutputOffset);
             mParseOutputOffset = 0;
             if (!mParseTagOnly)
             {
-                mParseOutput[mParseOutputOffset++] = mParseBuffer[index];
+                //mParseOutput[mParseOutputOffset++] = mParseBuffer[index];
             }
             break;
         case 12: /* 12 - Params name spacing */
         case 18: /* 18 - Params spacing 1 */
-        case 23: /* 23 - Params spacing 2 */
         case 37: /* 37 - Params value end spacing */
+            break;
+        case 23: /* 23 - Params spacing 2 */
+            if (mParseOutputOffset > 0)
+            {
+                mParseOutput[mParseOutputOffset] = 0;
+                FieldName(mParseOutput, mParseOutputOffset);
+                mParseOutputOffset = 0;
+            }
             break;
         case 19: /* 19 - Params spacing 1 LF */
         case 20: /* 20 - Params spacing 1 CR */
@@ -468,21 +856,57 @@ int CodeGenerator::ParseTemplateBlock(size_t length)
             {
                 result = -1;
             }
+            break;
         case 17: /* 17 - Params name error */
             result = -1;
             break;
-        case 22: /* 22 - Params spacing error */
         case 27: /* 27 - Params value " section */
+            if (mParseBuffer[index] != '"')
+            {
+                mParseOutput[mParseOutputOffset++] = mParseBuffer[index];
+                if (mParseOutputOffset == sizeof(mParseOutput))
+                {
+                    result = -1;
+                }
+            }
+            break;
         case 31: /* 31 - Params value ' section */
+            if (mParseBuffer[index] != '\'')
+            {
+                mParseOutput[mParseOutputOffset++] = mParseBuffer[index];
+                if (mParseOutputOffset == sizeof(mParseOutput))
+                {
+                    result = -1;
+                }
+            }
+            break;
         case 35: /* 35 - Params value continue */
+            mParseOutput[mParseOutputOffset++] = mParseBuffer[index];
+            if (mParseOutputOffset == sizeof(mParseOutput))
+            {
+                result = -1;
+            }
+            break;
+        case 22: /* 22 - Params spacing error */
+            result = -1;
+            break;
         case 36: /* 36 - Params value end */
+            if (mParseOutputOffset > 0)
+            {
+                mParseOutput[mParseOutputOffset++] = 0;
+                FieldValue(mParseOutput, mParseOutputOffset);
+                mParseOutputOffset = 0;
+            }
+            break;
         case 41:/* 41 - Params value error */
+            result = -1;
+            break;
         case 42:/* 42 - Params end */
             break;
         }
     }
 
-    return DumpOutputBuffer();
+    return AddTag();
 }
 
 int CodeGenerator::ParseTemplateInputFile()
@@ -508,10 +932,43 @@ int CodeGenerator::ParseTemplateInputFile()
     return result;
 }
 
-int CodeGenerator::ProcessTag(const char *tag, uint32_t tag_length)
+int CodeGenerator::ProcessTag(const uint8_t *buffer, uint32_t buffer_length)
 {
-    fprintf(mLogDest, "TAG: %s\n", tag);
+    Tag *tag = NULL;
 
+    fprintf(mLogDest, "TAG: %s\n", buffer);
+
+    if (!_strnicmp((const char*)buffer, "ForEach", buffer_length))
+    {
+        tag = new Tag(TAG_TYPE_FOREACH_BEGIN, buffer, buffer_length);
+    }
+    else if (!_strnicmp((const char*)buffer, "EndForEach", buffer_length))
+    {
+        tag = new Tag(TAG_TYPE_FOREACH_END, buffer, buffer_length);
+    }
+    else if (!_strnicmp((const char*)buffer, "Field", buffer_length))
+    {
+        tag = new Tag(TAG_TYPE_FIELD, buffer, buffer_length);
+    }
+    else if (!_strnicmp((const char*)buffer, "FieldCount", buffer_length))
+    {
+        tag = new Tag(TAG_TYPE_FIELD_COUNT, buffer, buffer_length);
+    }
+
+    if (tag != NULL)
+    {
+        if (mTagListHead != NULL)
+        {
+            mTagListTail->SetNextTag(tag);
+        }
+        else
+        {
+            mTagListHead = tag;
+        }
+        mTagListTail = tag;
+    }
+
+    //return tag != NULL ? 0 : 1;
     return 0;
 }
 
@@ -579,6 +1036,22 @@ int CodeGenerator::Run(int argc, char **argv)
             Usage(argv[0]);
             return 1;
         }
+
+        result = VerifyData();
+        if (result != 0)
+        {
+            printf("ERROR: Unable to verify data\n");
+            Usage(argv[0]);
+            return 1;
+        }
+
+        result = GenerateOutput();
+        if (result != 0)
+        {
+            printf("ERROR: Unable to generate output file\n");
+            Usage(argv[0]);
+            return 1;
+        }
     }
 
     return 0;
@@ -587,6 +1060,27 @@ int CodeGenerator::Run(int argc, char **argv)
 void CodeGenerator::Usage(const char *appName)
 {
     printf("Usage: %s <input_file> <template_file> <output_file>\n", appName);
+}
+
+int CodeGenerator::VerifyData()
+{
+    Tag *tag    = mTagListHead;
+    bool result = true;
+
+    fprintf(mLogDest, "Verifying data...\n");
+
+    while (tag != NULL && result)
+    {
+        tag->Dump(mLogDest);
+
+        result = tag->IsValid();
+
+        tag = tag->GetNextTag();
+    }
+
+    fprintf(mLogDest, "Verifying complete\n");
+
+    return result ? 0 : -1;
 }
 
 int main(int argc, char **argv)
