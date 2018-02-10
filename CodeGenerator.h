@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "DataType.h"
 
 typedef enum {
     TAG_TYPE_DATA,
@@ -13,6 +14,7 @@ typedef enum {
     TAG_TYPE_FOREACH_END,
     TAG_TYPE_FIELD,
     TAG_TYPE_FIELD_COUNT,
+    TAG_TYPE_SEPARATOR,
 } TagType;
 
 typedef enum {
@@ -76,6 +78,7 @@ class Tag
                         Tag(TagType tag_type, const uint8_t *buffer, uint32_t length);
                         ~Tag();
         void            Dump(FILE *output);
+        uint8_t*        GetName() { return mName; }
         Tag*            GetNextTag() { return mNextTag; }
         TagType         GetTagType() { return mTagType; }
         bool            IsNameEqual(const char *reference);
@@ -110,6 +113,10 @@ class CodeGenerator
         Tag             *mTagListHead;
         Tag             *mTagListTail;
         TagFieldType    mNextFieldType;
+        DataType        *mRootDataType;
+        uint32_t        mRootOffset;
+        DataType        *mCurrentDataType;
+        DataType        *mNamespaceDataType;
 
         int             AddTag();
         int             FieldName(const uint8_t *tag, uint32_t tag_length);

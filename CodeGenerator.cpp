@@ -1,4 +1,5 @@
 #include "CodeGenerator.h"
+#include "DataType.h"
 
 #ifndef WIN32
 #define _strnicmp strncasecmp
@@ -362,7 +363,7 @@ CodeGenerator::CodeGenerator():
     mInputFile(NULL), mOutputFile(NULL), mTemplateFile(NULL), mLogFile(NULL), mLogDest(stdout), mParseState(0),
     mParseOutputOffset(0), mParseFieldCount(0), mParseCharCount(0), mParseLineCount(0), mCurrentRecord(NULL),
     mRecordListHead(NULL), mRecordListTail(NULL), mRecordNames(NULL), mNumberOfFields(0), mTagListHead(NULL),
-    mTagListTail(NULL), mNextFieldType(TAG_FIELD_TYPE_NONE)
+    mTagListTail(NULL), mNextFieldType(TAG_FIELD_TYPE_NONE), mRootDataType(NULL)
 {
 
 }
@@ -477,11 +478,17 @@ int CodeGenerator::GenerateOutput()
                 {
                     foreachTag      = tag;
                     mCurrentRecord  = mRecordListHead;
+
+                    /* New model */
+                    mNamespaceDataType  = mRootDataType->ResolveName("test.SuperPacket");
+                    mCurrentDataType    = mNamespaceDataType ? mNamespaceDataType->Next() : NULL;
+                    mRootOffset         = 0;
+
                 }
                 break;
             case TAG_TYPE_FOREACH_END:
-                mCurrentRecord = mCurrentRecord->GetNextRecord();
-                if (mCurrentRecord != NULL)
+                mCurrentDataType = mNamespaceDataType->Next();
+                if (mCurrentDataType != NULL)
                 {
                     tag = foreachTag;
                 }
@@ -489,8 +496,27 @@ int CodeGenerator::GenerateOutput()
                 {
                     foreachTag = NULL;
                 }
+                /*mCurrentRecord = mCurrentRecord->GetNextRecord();
+                if (mCurrentRecord != NULL)
+                {
+                    tag = foreachTag;
+                }
+                else
+                {
+                    foreachTag = NULL;
+                }*/
                 break;
             case TAG_TYPE_FIELD:
+                if (mCurrentDataType != NULL)
+                {
+                    mCurrentDataType->Print(mOutputFile, (const char*)tag->GetName());
+                }
+                else
+                {
+                    fprintf(mLogDest, "[ERROR] Not inside record loop\n");
+                    result = -1;
+                }
+                /*
                 if (mCurrentRecord)
                 {
                     for (uint32_t index = 0; index < mNumberOfFields; index++)
@@ -506,9 +532,15 @@ int CodeGenerator::GenerateOutput()
                 {
                     fprintf(mLogDest, "[ERROR] Not inside record loop\n");
                     result = -1;
-                }
+                }*/
                 break;
             case TAG_TYPE_FIELD_COUNT:
+                break;
+            case TAG_TYPE_SEPARATOR:
+                if (mCurrentRecord && mCurrentRecord->GetNextRecord() != NULL)
+                {
+                    fprintf(mOutputFile, ",");
+                }
                 break;
         }
 
@@ -954,6 +986,10 @@ int CodeGenerator::ProcessTag(const uint8_t *buffer, uint32_t buffer_length)
     {
         tag = new Tag(TAG_TYPE_FIELD_COUNT, buffer, buffer_length);
     }
+    else if (!_strnicmp((const char*)buffer, "Separator", buffer_length))
+    {
+        tag = new Tag(TAG_TYPE_SEPARATOR, buffer, buffer_length);
+    }
 
     if (tag != NULL)
     {
@@ -1020,6 +1056,8 @@ int CodeGenerator::Run(int argc, char **argv)
                 mLogDest = mLogFile;
             }
         }
+
+        mRootDataType = DataTypeTester();
 
         result = ParseCsvInputFile();
         if (result != 0)
