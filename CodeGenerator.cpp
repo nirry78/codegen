@@ -1,10 +1,9 @@
+#include "Platform.h"
 #include "CodeGenerator.h"
 #include "DataType.h"
-
-#ifndef WIN32
-#define _strnicmp strncasecmp
-#define _strdup strdup
-#endif
+#include <iostream>
+#include <fstream>
+#include "yaml-cpp/yaml.h"
 
 static const uint8_t charCompressionTable[256] = {
     /* NUL SOH STX ETX EOT ENQ ACK BEL BS  TAB LF  VT  FF  CR  SO  SI  */
@@ -99,7 +98,7 @@ static const uint8_t templateStateTranstionTable[43][19] = {
     {   0,  0,  0,  8,  9,  0,  0,  0,  0,   0,  0,  0,  0,  1,    0,  0,  0,  0,  0 }, /* 42 - Params end */
 };
 
-Field::Field(const char *value, uint32_t length)
+Field::Field(const char *value, size_t length)
 {
     mStringValue = new char[length];
     if (mStringValue != NULL)
@@ -130,7 +129,7 @@ Record::~Record()
 {
     if (mFieldList)
     {
-        for (uint32_t index = 0; index < mNumberOfFields; index++)
+        for (size_t index = 0; index < mNumberOfFields; index++)
         {
             if (mFieldList[index] != NULL)
             {
@@ -142,7 +141,7 @@ Record::~Record()
     }
 }
 
-void Record::AddField(uint32_t index, const char *value, uint32_t length)
+void Record::AddField(size_t index, const char *value, size_t length)
 {
     if (mFieldList != NULL && mFieldList[index] == NULL)
     {
@@ -150,7 +149,7 @@ void Record::AddField(uint32_t index, const char *value, uint32_t length)
     }
 }
 
-int Record::Output(FILE *output, uint32_t index, TagStyle style, TagConvert convert)
+int Record::Output(FILE *output, size_t index, TagStyle style, TagConvert convert)
 {
     int result = -1;
     Field *field = mFieldList[index];
@@ -213,13 +212,14 @@ int Record::Output(FILE *output, uint32_t index, TagStyle style, TagConvert conv
     return result;
 }
 
-Tag::Tag(TagType tag_type, const uint8_t *buffer, uint32_t length):
+Tag::Tag(TagType tag_type, const uint8_t *buffer, size_t length):
     mTagType(tag_type),
     mBufferLength(length),
     mNextTag(NULL),
     mTagStyle(TAG_STYLE_STANDARD),
     mTagConvert(TAG_CONVERT_NONE),
-    mName(NULL), mNameLength(0)
+    mName(NULL),
+    mNameLength(0)
 {
     mBuffer = new uint8_t[length];
     if (mBuffer != NULL)
@@ -248,11 +248,23 @@ void Tag::Dump(FILE *output)
         case TAG_TYPE_DATA:
             fprintf(output, "TAG[DATA]\n");
             break;
-        case TAG_TYPE_FOREACH_BEGIN:
-            fprintf(output, "TAG[FOREACH_BEGIN]\n");
+        case TAG_TYPE_FOREACH_FIELD_BEGIN:
+            fprintf(output, "TAG[FOREACH_FIELD_BEGIN]\n");
             break;
-        case TAG_TYPE_FOREACH_END:
-            fprintf(output, "TAG[FOREACH_END]\n");
+        case TAG_TYPE_FOREACH_FIELD_END:
+            fprintf(output, "TAG[FOREACH_FIELD_END]\n");
+            break;
+        case TAG_TYPE_FOREACH_NAMESPACE_BEGIN:
+            fprintf(output, "TAG[FOREACH_NAMESPACE_BEGIN]\n");
+            break;
+        case TAG_TYPE_FOREACH_NAMESPACE_END:
+            fprintf(output, "TAG[FOREACH_NAMESPACE_END]\n");
+            break;
+        case TAG_TYPE_FOREACH_CONTAINER_BEGIN:
+            fprintf(output, "TAG[FOREACH_CONTAINER_BEGIN]\n");
+            break;
+        case TAG_TYPE_FOREACH_CONTAINER_END:
+            fprintf(output, "TAG[FOREACH_CONTAINER_END]\n");
             break;
         case TAG_TYPE_FIELD:
             fprintf(output, "TAG[FIELD] Name:%s\n", mName ? (char*)mName : "N/A");
@@ -313,7 +325,7 @@ int Tag::OutputField(FILE *output, Record *record, uint32_t index)
     return result;
 }
 
-int Tag::SetFieldValue(TagFieldType fieldType, const uint8_t *buffer, uint32_t length)
+int Tag::SetFieldValue(TagFieldType fieldType, const uint8_t *buffer, size_t length)
 {
     int result = 0;
 
@@ -418,7 +430,7 @@ int CodeGenerator::AddTag()
     return result;
 }
 
-int CodeGenerator::FieldName(const uint8_t *buffer, uint32_t buffer_length)
+int CodeGenerator::FieldName(const uint8_t *buffer, size_t buffer_length)
 {
     int result = 0;
 
@@ -446,20 +458,24 @@ int CodeGenerator::FieldName(const uint8_t *buffer, uint32_t buffer_length)
     return result;
 }
 
-int CodeGenerator::FieldValue(const uint8_t *buffer, uint32_t buffer_length)
+int CodeGenerator::FieldValue(const uint8_t *buffer, size_t buffer_length)
 {
     return mTagListTail->SetFieldValue(mNextFieldType, buffer, buffer_length);
 }
 
 int CodeGenerator::GenerateOutput()
 {
-    Tag *tag        = mTagListHead;
-    Tag *foreachTag = NULL;
-    int result      = 0;
+    Tag *tag                 = mTagListHead;
+    Tag *foreachNamespaceTag = NULL;
+    Tag *foreachContainerTag = NULL;
+    Tag *foreachFieldTag     = NULL;
+    int result               = 0;
 
     fprintf(mLogDest, "Generating output...\n");
 
-    mCurrentRecord = NULL;
+    mContainerDataType = NULL;
+    mFieldDataType     = NULL;
+    mNamespaceDataType = mRootDataType->ResolveName("*");
 
     while (tag != NULL && result == 0)
     {
@@ -468,76 +484,105 @@ int CodeGenerator::GenerateOutput()
             case TAG_TYPE_DATA:
                 result = tag->Output(mOutputFile);
                 break;
-            case TAG_TYPE_FOREACH_BEGIN:
-                if (foreachTag != NULL)
+            case TAG_TYPE_FOREACH_CONTAINER_BEGIN:
+                if (foreachContainerTag != NULL)
+                {
+                    fprintf(mLogDest, "[ERROR] Foreach tag found inside container loop\n");
+                    result = -1;
+                }
+                else if (mNamespaceDataType == NULL)
+                {
+                    fprintf(mLogDest, "[ERROR] No namespace selected\n");
+                    result = -1;
+                }
+                else if (mFieldDataType != NULL)
+                {
+                    fprintf(mLogDest, "[ERROR] Internal error as field is currently selected\n");
+                    result = -1;
+                }
+                else
+                {
+                    mContainerDataType = mNamespaceDataType->Reset();
+                    if (mContainerDataType == NULL)
+                    {
+                        fprintf(mLogDest, "[ERROR] No containers exists\n");
+                        result = -1;
+                    }
+                    else
+                    {
+                        foreachContainerTag = tag;
+                        mCurrentRecord      = mRecordListHead;
+                        mRootOffset         = 0;
+                    }
+                }
+                break;
+            case TAG_TYPE_FOREACH_CONTAINER_END:
+                mContainerDataType = mNamespaceDataType->Next();
+                if (mContainerDataType != NULL)
+                {
+                    tag = foreachContainerTag;
+                }
+                else
+                {
+                    foreachContainerTag = NULL;
+                }
+                break;
+            case TAG_TYPE_FOREACH_FIELD_BEGIN:
+                if (foreachFieldTag != NULL)
                 {
                     fprintf(mLogDest, "[ERROR] Foreach tag found inside loop\n");
                     result = -1;
                 }
+                else if (mContainerDataType == NULL)
+                {
+                    fprintf(mLogDest, "[ERROR] No container selected\n");
+                    result = -1;
+                }
                 else
                 {
-                    foreachTag      = tag;
+                    foreachFieldTag = tag;
                     mCurrentRecord  = mRecordListHead;
-
-                    /* New model */
-                    mNamespaceDataType  = mRootDataType->ResolveName("test.SuperPacket");
-                    mCurrentDataType    = mNamespaceDataType ? mNamespaceDataType->Next() : NULL;
-                    mRootOffset         = 0;
-
+                    mFieldDataType  = mContainerDataType->Reset();
+                    mRootOffset     = 0;
                 }
                 break;
-            case TAG_TYPE_FOREACH_END:
-                mCurrentDataType = mNamespaceDataType->Next();
-                if (mCurrentDataType != NULL)
+            case TAG_TYPE_FOREACH_FIELD_END:
+                mFieldDataType = mContainerDataType->Next();
+                if (mFieldDataType != NULL)
                 {
-                    tag = foreachTag;
+                    tag = foreachFieldTag;
                 }
                 else
                 {
-                    foreachTag = NULL;
+                    foreachFieldTag = NULL;
                 }
-                /*mCurrentRecord = mCurrentRecord->GetNextRecord();
-                if (mCurrentRecord != NULL)
-                {
-                    tag = foreachTag;
-                }
-                else
-                {
-                    foreachTag = NULL;
-                }*/
                 break;
             case TAG_TYPE_FIELD:
-                if (mCurrentDataType != NULL)
+                if (mFieldDataType != NULL)
                 {
-                    mCurrentDataType->Print(mOutputFile, (const char*)tag->GetName());
+                    mFieldDataType->Print(mOutputFile, (const char*)tag->GetName());
                 }
                 else
                 {
-                    fprintf(mLogDest, "[ERROR] Not inside record loop\n");
+                    fprintf(mLogDest, "[ERROR] Not inside field loop\n");
                     result = -1;
                 }
-                /*
-                if (mCurrentRecord)
+                break;
+            case TAG_TYPE_CONTAINER:
+                if (mContainerDataType != NULL)
                 {
-                    for (uint32_t index = 0; index < mNumberOfFields; index++)
-                    {
-                        if (tag->IsNameEqual((const char*)mRecordNames[index]))
-                        {
-                            result = tag->OutputField(mOutputFile, mCurrentRecord, index);
-                            break;
-                        }
-                    }
+                    mContainerDataType->Print(mOutputFile, (const char*)tag->GetName());
                 }
                 else
                 {
-                    fprintf(mLogDest, "[ERROR] Not inside record loop\n");
+                    fprintf(mLogDest, "[ERROR] Not inside container loop\n");
                     result = -1;
-                }*/
+                }
                 break;
             case TAG_TYPE_FIELD_COUNT:
                 break;
             case TAG_TYPE_SEPARATOR:
-                if (mCurrentRecord && mCurrentRecord->GetNextRecord() != NULL)
+                if (mContainerDataType && mContainerDataType->HasMoreDataTypes())
                 {
                     fprintf(mOutputFile, ",");
                 }
@@ -744,10 +789,74 @@ int CodeGenerator::ParseCsvInputFile()
         total += ret;
     }
 
-    printf("Read %u bytes from CSV file\n", total);
+    printf("Read %zu bytes from CSV file\n", total);
 
     return result;
 }
+
+int CodeGenerator::ParseYamlInputFile()
+{
+    int result = 0;
+
+    try
+    {
+        using YAML::Node;
+        using YAML::NodeType;
+
+        Node node = YAML::LoadFile("c:\\git\\bluetooth\\experimental\\hci.yaml");
+
+        for (YAML::detail::const_node_iterator it = node.begin(); it != node.end(); ++it) {
+            Node n = *it->second;
+
+            switch (n.Type())
+            {
+            case  NodeType::Null: // ...
+                std::cout << "Null";
+                break;
+            case NodeType::Scalar: // ...
+                std::cout << "Scalar";
+                break;
+            case NodeType::Sequence: // ...
+                std::cout << "Sequence";
+                break;
+            case NodeType::Map: // ...
+                std::cout << "Map";
+                break;
+            case NodeType::Undefined: // ...
+                std::cout << "Undefined";
+                break;
+            }
+        }
+
+        switch (node.Type())
+        {
+        case  NodeType::Null: // ...
+            std::cout << "Null";
+            break;
+        case NodeType::Scalar: // ...
+            std::cout << "Scalar";
+            break;
+        case NodeType::Sequence: // ...
+            std::cout << "Sequence";
+            break;
+        case NodeType::Map: // ...
+            std::cout << "Map";
+            break;
+        case NodeType::Undefined: // ...
+            std::cout << "Undefined";
+            break;
+        }
+    }
+    catch (std::exception e)
+    {
+        std::cout << e.what();
+
+        result = -1;
+    }
+
+    return result;
+}
+
 
 int CodeGenerator::ParseTemplateBlock(size_t length)
 {
@@ -758,7 +867,7 @@ int CodeGenerator::ParseTemplateBlock(size_t length)
     {
         uint8_t mParseStatePrevious = mParseState;
         mParseState = templateStateTranstionTable[mParseState][charCompressionTable[mParseBuffer[index]]];
-        fprintf(mLogDest, "[%4u:%2u] %2u (%c): %2u > %2u\n",
+        fprintf(mLogDest, "[%4zu:%2zu] %2u (%c): %2u > %2u\n",
                mParseLineCount,
                mParseCharCount,
                mParseBuffer[index],
@@ -964,23 +1073,47 @@ int CodeGenerator::ParseTemplateInputFile()
     return result;
 }
 
-int CodeGenerator::ProcessTag(const uint8_t *buffer, uint32_t buffer_length)
+int CodeGenerator::ProcessTag(const uint8_t *buffer, size_t buffer_length)
 {
     Tag *tag = NULL;
 
     fprintf(mLogDest, "TAG: %s\n", buffer);
 
-    if (!_strnicmp((const char*)buffer, "ForEach", buffer_length))
+    if (!_strnicmp((const char*)buffer, "ForEachField", buffer_length))
     {
-        tag = new Tag(TAG_TYPE_FOREACH_BEGIN, buffer, buffer_length);
+        tag = new Tag(TAG_TYPE_FOREACH_FIELD_BEGIN, buffer, buffer_length);
     }
-    else if (!_strnicmp((const char*)buffer, "EndForEach", buffer_length))
+    else if (!_strnicmp((const char*)buffer, "EndForEachField", buffer_length))
     {
-        tag = new Tag(TAG_TYPE_FOREACH_END, buffer, buffer_length);
+        tag = new Tag(TAG_TYPE_FOREACH_FIELD_END, buffer, buffer_length);
+    }
+    else if (!_strnicmp((const char*)buffer, "ForEachNamespace", buffer_length))
+    {
+        tag = new Tag(TAG_TYPE_FOREACH_NAMESPACE_BEGIN, buffer, buffer_length);
+    }
+    else if (!_strnicmp((const char*)buffer, "EndForEachNamespace", buffer_length))
+    {
+        tag = new Tag(TAG_TYPE_FOREACH_NAMESPACE_END, buffer, buffer_length);
+    }
+    else if (!_strnicmp((const char*)buffer, "ForEachContainer", buffer_length))
+    {
+        tag = new Tag(TAG_TYPE_FOREACH_CONTAINER_BEGIN, buffer, buffer_length);
+    }
+    else if (!_strnicmp((const char*)buffer, "EndForEachContainer", buffer_length))
+    {
+        tag = new Tag(TAG_TYPE_FOREACH_CONTAINER_END, buffer, buffer_length);
     }
     else if (!_strnicmp((const char*)buffer, "Field", buffer_length))
     {
         tag = new Tag(TAG_TYPE_FIELD, buffer, buffer_length);
+    }
+    else if (!_strnicmp((const char*)buffer, "Namespace", buffer_length))
+    {
+        tag = new Tag(TAG_TYPE_NAMESPACE, buffer, buffer_length);
+    }
+    else if (!_strnicmp((const char*)buffer, "Container", buffer_length))
+    {
+        tag = new Tag(TAG_TYPE_CONTAINER, buffer, buffer_length);
     }
     else if (!_strnicmp((const char*)buffer, "FieldCount", buffer_length))
     {
@@ -1058,7 +1191,7 @@ int CodeGenerator::Run(int argc, char **argv)
         }
 
         mRootDataType = DataTypeTester();
-
+/*
         result = ParseCsvInputFile();
         if (result != 0)
         {
@@ -1066,6 +1199,8 @@ int CodeGenerator::Run(int argc, char **argv)
             Usage(argv[0]);
             return 1;
         }
+*/
+        result = ParseYamlInputFile();
 
         result = ParseTemplateInputFile();
         if (result != 0)

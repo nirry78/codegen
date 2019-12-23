@@ -54,3 +54,4 @@ dkms.conf
 # Build output
 output/
 test/
+yaml-cpp

@@ -2,10 +2,14 @@ cmake_minimum_required(VERSION 3.0 FATAL_ERROR)
 
 project(CodeGenerator)
 
+add_definitions(-D_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING)
+
+add_subdirectory(yaml-cpp)
+
 set(SRCS 
     #DataStore.csv
     #DataStore.cpp
-    #DataStore.template.cpp
+    DataStore.template.cpp
     DataType.cpp
     CodeGenerator.cpp)
 
@@ -25,5 +29,8 @@ endif()
 
 add_definitions("-D_CRT_SECURE_NO_WARNINGS")
 
+include_directories("yaml-cpp/include")
+
 add_executable(${APP_NAME} ${SRCS} ${HDRS})
 
+target_link_libraries(${APP_NAME} yaml-cpp)

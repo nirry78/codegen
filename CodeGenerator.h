@@ -10,8 +10,14 @@
 
 typedef enum {
     TAG_TYPE_DATA,
-    TAG_TYPE_FOREACH_BEGIN,
-    TAG_TYPE_FOREACH_END,
+    TAG_TYPE_CONTAINER,
+    TAG_TYPE_NAMESPACE,
+    TAG_TYPE_FOREACH_NAMESPACE_BEGIN,
+    TAG_TYPE_FOREACH_NAMESPACE_END,
+    TAG_TYPE_FOREACH_CONTAINER_BEGIN,
+    TAG_TYPE_FOREACH_CONTAINER_END,
+    TAG_TYPE_FOREACH_FIELD_BEGIN,
+    TAG_TYPE_FOREACH_FIELD_END,
     TAG_TYPE_FIELD,
     TAG_TYPE_FIELD_COUNT,
     TAG_TYPE_SEPARATOR,
@@ -41,7 +47,7 @@ class Field
     private:
         char            *mStringValue;
     public:
-                        Field(const char *value, uint32_t length);
+                        Field(const char *value, size_t length);
                         ~Field();
         char*           GetValue() { return mStringValue; }
 };
@@ -57,9 +63,9 @@ class Record
                         Record(uint32_t numberOfFields);
                         ~Record();
 
-        void            AddField(uint32_t index, const char *value, uint32_t length);
+        void            AddField(size_t index, const char *value, size_t length);
         Record*         GetNextRecord() { return mNextRecord; }
-        int             Output(FILE *output, uint32_t index, TagStyle style, TagConvert convert);
+        int             Output(FILE *output, size_t index, TagStyle style, TagConvert convert);
         void            SetNextRecord(Record *record) { mNextRecord = record; }
 };
 
@@ -68,14 +74,14 @@ class Tag
     private:
         class Tag       *mNextTag;
         uint8_t         *mBuffer;
-        uint32_t        mBufferLength;
+        size_t          mBufferLength;
         TagType         mTagType;
         TagStyle        mTagStyle;
         TagConvert      mTagConvert;
         uint8_t         *mName;
-        uint32_t        mNameLength;
+        size_t          mNameLength;
     public:
-                        Tag(TagType tag_type, const uint8_t *buffer, uint32_t length);
+                        Tag(TagType tag_type, const uint8_t *buffer, size_t length);
                         ~Tag();
         void            Dump(FILE *output);
         uint8_t*        GetName() { return mName; }
@@ -85,7 +91,7 @@ class Tag
         bool            IsValid();
         int             Output(FILE *output);
         int             OutputField(FILE *output, Record *record, uint32_t index);
-        int             SetFieldValue(TagFieldType fieldType, const uint8_t *buffer, uint32_t length);
+        int             SetFieldValue(TagFieldType fieldType, const uint8_t *buffer, size_t length);
         void            SetNextTag(Tag *tag) { mNextTag = tag;}
 };
 
@@ -113,20 +119,22 @@ class CodeGenerator
         Tag             *mTagListHead;
         Tag             *mTagListTail;
         TagFieldType    mNextFieldType;
-        DataType        *mRootDataType;
         uint32_t        mRootOffset;
-        DataType        *mCurrentDataType;
+        DataType        *mRootDataType;
+        DataType        *mContainerDataType;
+        DataType        *mFieldDataType;
         DataType        *mNamespaceDataType;
 
         int             AddTag();
-        int             FieldName(const uint8_t *tag, uint32_t tag_length);
-        int             FieldValue(const uint8_t *tag, uint32_t tag_length);
+        int             FieldName(const uint8_t *tag, size_t tag_length);
+        int             FieldValue(const uint8_t *tag, size_t tag_length);
         int             GenerateOutput();
         int             ParseCsvBlock(const char delimiter, size_t length);
         int             ParseCsvInputFile();
+        int             ParseYamlInputFile();
         int             ParseTemplateBlock(size_t length);
         int             ParseTemplateInputFile();
-        int             ProcessTag(const uint8_t *tag, uint32_t tag_length);
+        int             ProcessTag(const uint8_t *tag, size_t tag_length);
         void            Usage(const char *appName);
         int             VerifyData();
     public:

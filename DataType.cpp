@@ -1,3 +1,4 @@
+#include "Platform.h"
 #include "DataType.h"
 
 DataType::DataType(DataTypeT type, const char *name, const char *typeString, int64_t defaultValue, int64_t minimumValue, int64_t maximumValue):
@@ -149,6 +150,13 @@ DataType *DataType::Next()
     return mContainerListReadOffset != mContainerListWriteOffset ? mContainerList[mContainerListReadOffset++] : NULL;
 }
 
+DataType *DataType::Reset()
+{
+    mContainerListReadOffset = 0;
+
+    return Next();
+}
+
 DataType *DataType::ResolveName(const char *name)
 {
     DataType *dt = NULL;
@@ -184,6 +192,30 @@ int32_t DataType::Print(FILE *output, const char *field)
     {
         fprintf(output, "%s", mName);
     }
+    else if (!_strnicmp(field, "type", 4))
+    {
+        fprintf(output, "%s", mTypeString);
+    }
+    else if (!_strnicmp(field, "default", 7))
+    {
+        OnPrintDefaultValue(output);
+    }
+    else if (!_strnicmp(field, "format", 6))
+    {
+        OnPrintFormat(output, false);
+    }
+    else if (!_strnicmp(field, "minimum_value", 13))
+    {
+        OnPrintMinimumValue(output);
+    }
+    else if (!_strnicmp(field, "maximum_value", 13))
+    {
+        OnPrintMaximumValue(output);
+    }
+    else
+    {
+        printf("[ERROR] BLA\n");
+    }
 
     return 0;
 }
@@ -194,18 +226,30 @@ DataType* DataTypeTester(void)
 
     if (nameSpace)
     {
-        DataTypeContainer *c = new DataTypeContainer("SuperPacket");
+        DataTypeContainer *c1 = new DataTypeContainer("DataStore1");
+        DataTypeContainer *c2 = new DataTypeContainer("DataStore2");
 
-        c->AddDataType(new DataTypeUint8("Name"));
-        c->AddDataType(new DataTypeUint16("Value"));
-        c->AddDataType(new DataTypeUint32("Test"));
-        c->AddDataType(new DataTypeUint64("Data"));
-        c->AddDataType(new DataTypeInt8("Name"));
-        c->AddDataType(new DataTypeInt16("Name"));
-        c->AddDataType(new DataTypeInt32("Name"));
-        c->AddDataType(new DataTypeInt64("Name"));
+        c1->AddDataType(new DataTypeUint8("Type", 12));
+        c1->AddDataType(new DataTypeUint16("Length", 1234));
+        c1->AddDataType(new DataTypeUint32("ListOffset", 123456));
+        c1->AddDataType(new DataTypeUint64("Power", 234920923408092384ULL));
+        c1->AddDataType(new DataTypeInt8("V1", -1));
+        c1->AddDataType(new DataTypeInt16("V2", -23942));
+        c1->AddDataType(new DataTypeInt32("V3", -1233451));
+        c1->AddDataType(new DataTypeInt64("V4", -31234532452345L));
 
-        nameSpace->AddDataType(c);
+        nameSpace->AddDataType(c1);
+
+        c2->AddDataType(new DataTypeUint8("Type", 12));
+        c2->AddDataType(new DataTypeUint16("Length", 1234));
+        c2->AddDataType(new DataTypeUint32("ListOffset", 123456));
+        c2->AddDataType(new DataTypeUint64("Power", 234920923408092384ULL));
+        c2->AddDataType(new DataTypeInt8("V1", -1));
+        c2->AddDataType(new DataTypeInt16("V2", -23942));
+        c2->AddDataType(new DataTypeInt32("V3", -1233451));
+        c2->AddDataType(new DataTypeInt64("V4", -31234532452345L));
+
+        nameSpace->AddDataType(c2);
     }
 
     return nameSpace;
