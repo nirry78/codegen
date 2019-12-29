@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "DataType.h"
+#include "JsonReader.h"
 
 typedef enum {
     TAG_TYPE_DATA,
@@ -132,6 +133,7 @@ class CodeGenerator
         int             ParseCsvBlock(const char delimiter, size_t length);
         int             ParseCsvInputFile();
         int             ParseYamlInputFile();
+        int             ParseJsonInputFile(const char *filename);
         int             ParseTemplateBlock(size_t length);
         int             ParseTemplateInputFile();
         int             ProcessTag(const uint8_t *tag, size_t tag_length);

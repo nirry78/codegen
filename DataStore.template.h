@@ -9,9 +9,9 @@
 class DataStore
 {
     private:
-@foreach
-        @field{name='type'} m@field{name='name'};
-@endforeach
+@ForEachField
+        @Field{name='type'} m@Field{name='name'};
+@EndForEachField
 
     public:
         DataStore();

@@ -2,6 +2,7 @@
 #define _DATA_TYPE_H
 
 #include <stdint.h>
+#include <inttypes.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -142,10 +143,11 @@ class DataTypeUint32: public DataType
 class DataTypeUint64: public DataType
 {
     private:
-        virtual size_t      OnPrintDefaultValue(FILE *output) { return fprintf(output, "%lluULL", mDefaultValue.mUint64); }
+    
+        virtual size_t      OnPrintDefaultValue(FILE *output) { return fprintf(output, "%" PRIu64 "ULL", mDefaultValue.mUint64); }
         virtual size_t      OnPrintFormat(FILE *output, bool hex) { return hex ? fprintf(output, "%%llx") : fprintf(output, "%%llu"); }
-        virtual size_t      OnPrintMinimumValue(FILE *output) { return fprintf(output, "%lluULL", mMinumimValue.mUint64); }
-        virtual size_t      OnPrintMaximumValue(FILE *output) { return fprintf(output, "%lluULL", mMaximumValue.mUint64); }
+        virtual size_t      OnPrintMinimumValue(FILE *output) { return fprintf(output, "%" PRIu64 "ULL", mMinumimValue.mUint64); }
+        virtual size_t      OnPrintMaximumValue(FILE *output) { return fprintf(output, "%" PRIu64 "ULL", mMaximumValue.mUint64); }
 
     public:
         DataTypeUint64(const char *name, uint64_t defaultValue = 0, uint64_t minimumValue = 0, uint64_t maximumValue = 0xFFFFFFFFFFFFFFFFL):
@@ -198,10 +200,10 @@ class DataTypeInt32: public DataType
 class DataTypeInt64: public DataType
 {
     private:
-        virtual size_t      OnPrintDefaultValue(FILE *output) { return fprintf(output, "%lldLL", mDefaultValue.mInt64); }
+        virtual size_t      OnPrintDefaultValue(FILE *output) { return fprintf(output, "%" PRId64 "LL", mDefaultValue.mInt64); }
         virtual size_t      OnPrintFormat(FILE *output, bool hex) { return hex ? fprintf(output, "%%llx") : fprintf(output, "%%lld"); }
-        virtual size_t      OnPrintMinimumValue(FILE *output) { return fprintf(output, "%lldLL", mMinumimValue.mInt64); }
-        virtual size_t      OnPrintMaximumValue(FILE *output) { return fprintf(output, "%lldLL", mMaximumValue.mInt64); }
+        virtual size_t      OnPrintMinimumValue(FILE *output) { return fprintf(output, "%" PRId64 "LL", mMinumimValue.mInt64); }
+        virtual size_t      OnPrintMaximumValue(FILE *output) { return fprintf(output, "%" PRId64 "LL", mMaximumValue.mInt64); }
 
     public:
         DataTypeInt64(const char *name, int64_t defaultValue = 0, int64_t minimumValue = (int64_t)0x8000000000000000L, int64_t maximumValue = 0x7FFFFFFFFFFFFFFFL) :

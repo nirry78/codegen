@@ -1,9 +1,9 @@
 #include "Platform.h"
 #include "CodeGenerator.h"
 #include "DataType.h"
+#include "Logging.h"
 #include <iostream>
 #include <fstream>
-#include "yaml-cpp/yaml.h"
 
 static const uint8_t charCompressionTable[256] = {
     /* NUL SOH STX ETX EOT ENQ ACK BEL BS  TAB LF  VT  FF  CR  SO  SI  */
@@ -203,7 +203,7 @@ int Record::Output(FILE *output, size_t index, TagStyle style, TagConvert conver
                 break;
         }
 
-        fprintf(output, "%s", str);
+        LOGD("%s", str);
         free(str);
 
         result = 0;
@@ -246,31 +246,34 @@ void Tag::Dump(FILE *output)
     switch (mTagType)
     {
         case TAG_TYPE_DATA:
-            fprintf(output, "TAG[DATA]\n");
+            LOGD("TAG[DATA:%u]\n", mBufferLength);
             break;
         case TAG_TYPE_FOREACH_FIELD_BEGIN:
-            fprintf(output, "TAG[FOREACH_FIELD_BEGIN]\n");
+            LOGD("TAG[FOREACH_FIELD_BEGIN]\n");
             break;
         case TAG_TYPE_FOREACH_FIELD_END:
-            fprintf(output, "TAG[FOREACH_FIELD_END]\n");
+            LOGD("TAG[FOREACH_FIELD_END]\n");
             break;
         case TAG_TYPE_FOREACH_NAMESPACE_BEGIN:
-            fprintf(output, "TAG[FOREACH_NAMESPACE_BEGIN]\n");
+            LOGD("TAG[FOREACH_NAMESPACE_BEGIN]\n");
             break;
         case TAG_TYPE_FOREACH_NAMESPACE_END:
-            fprintf(output, "TAG[FOREACH_NAMESPACE_END]\n");
+            LOGD("TAG[FOREACH_NAMESPACE_END]\n");
             break;
         case TAG_TYPE_FOREACH_CONTAINER_BEGIN:
-            fprintf(output, "TAG[FOREACH_CONTAINER_BEGIN]\n");
+            LOGD("TAG[FOREACH_CONTAINER_BEGIN]\n");
             break;
         case TAG_TYPE_FOREACH_CONTAINER_END:
-            fprintf(output, "TAG[FOREACH_CONTAINER_END]\n");
+            LOGD("TAG[FOREACH_CONTAINER_END]\n");
             break;
         case TAG_TYPE_FIELD:
-            fprintf(output, "TAG[FIELD] Name:%s\n", mName ? (char*)mName : "N/A");
+            LOGD("TAG[FIELD] Name:%s\n", mName ? (char*)mName : "N/A");
             break;
         case TAG_TYPE_FIELD_COUNT:
-            fprintf(output, "TAG[FIELD_COUNT]\n");
+            LOGD("TAG[FIELD_COUNT]\n");
+            break;
+        default:
+            LOGD("TAG[UNKNOWN]\n");
             break;
     }
 }
@@ -471,7 +474,7 @@ int CodeGenerator::GenerateOutput()
     Tag *foreachFieldTag     = NULL;
     int result               = 0;
 
-    fprintf(mLogDest, "Generating output...\n");
+    LOGI("Generating output...\n");
 
     mContainerDataType = NULL;
     mFieldDataType     = NULL;
@@ -487,17 +490,17 @@ int CodeGenerator::GenerateOutput()
             case TAG_TYPE_FOREACH_CONTAINER_BEGIN:
                 if (foreachContainerTag != NULL)
                 {
-                    fprintf(mLogDest, "[ERROR] Foreach tag found inside container loop\n");
+                    LOGE("Foreach tag found inside container loop\n");
                     result = -1;
                 }
                 else if (mNamespaceDataType == NULL)
                 {
-                    fprintf(mLogDest, "[ERROR] No namespace selected\n");
+                    LOGE("No namespace selected\n");
                     result = -1;
                 }
                 else if (mFieldDataType != NULL)
                 {
-                    fprintf(mLogDest, "[ERROR] Internal error as field is currently selected\n");
+                    LOGE("Internal error as field is currently selected\n");
                     result = -1;
                 }
                 else
@@ -505,7 +508,7 @@ int CodeGenerator::GenerateOutput()
                     mContainerDataType = mNamespaceDataType->Reset();
                     if (mContainerDataType == NULL)
                     {
-                        fprintf(mLogDest, "[ERROR] No containers exists\n");
+                        LOGE("No containers exists\n");
                         result = -1;
                     }
                     else
@@ -530,12 +533,12 @@ int CodeGenerator::GenerateOutput()
             case TAG_TYPE_FOREACH_FIELD_BEGIN:
                 if (foreachFieldTag != NULL)
                 {
-                    fprintf(mLogDest, "[ERROR] Foreach tag found inside loop\n");
+                    LOGE("Foreach tag found inside loop\n");
                     result = -1;
                 }
                 else if (mContainerDataType == NULL)
                 {
-                    fprintf(mLogDest, "[ERROR] No container selected\n");
+                    LOGE("No container selected\n");
                     result = -1;
                 }
                 else
@@ -564,7 +567,7 @@ int CodeGenerator::GenerateOutput()
                 }
                 else
                 {
-                    fprintf(mLogDest, "[ERROR] Not inside field loop\n");
+                    LOGE("Not inside field loop\n");
                     result = -1;
                 }
                 break;
@@ -575,7 +578,7 @@ int CodeGenerator::GenerateOutput()
                 }
                 else
                 {
-                    fprintf(mLogDest, "[ERROR] Not inside container loop\n");
+                    LOGE("Not inside container loop\n");
                     result = -1;
                 }
                 break;
@@ -796,67 +799,15 @@ int CodeGenerator::ParseCsvInputFile()
 
 int CodeGenerator::ParseYamlInputFile()
 {
-    int result = 0;
-
-    try
-    {
-        using YAML::Node;
-        using YAML::NodeType;
-
-        Node node = YAML::LoadFile("c:\\git\\bluetooth\\experimental\\hci.yaml");
-
-        for (YAML::detail::const_node_iterator it = node.begin(); it != node.end(); ++it) {
-            Node n = *it->second;
-
-            switch (n.Type())
-            {
-            case  NodeType::Null: // ...
-                std::cout << "Null";
-                break;
-            case NodeType::Scalar: // ...
-                std::cout << "Scalar";
-                break;
-            case NodeType::Sequence: // ...
-                std::cout << "Sequence";
-                break;
-            case NodeType::Map: // ...
-                std::cout << "Map";
-                break;
-            case NodeType::Undefined: // ...
-                std::cout << "Undefined";
-                break;
-            }
-        }
-
-        switch (node.Type())
-        {
-        case  NodeType::Null: // ...
-            std::cout << "Null";
-            break;
-        case NodeType::Scalar: // ...
-            std::cout << "Scalar";
-            break;
-        case NodeType::Sequence: // ...
-            std::cout << "Sequence";
-            break;
-        case NodeType::Map: // ...
-            std::cout << "Map";
-            break;
-        case NodeType::Undefined: // ...
-            std::cout << "Undefined";
-            break;
-        }
-    }
-    catch (std::exception e)
-    {
-        std::cout << e.what();
-
-        result = -1;
-    }
-
-    return result;
+    return 0;
 }
 
+int CodeGenerator::ParseJsonInputFile(const char *filename)
+{
+    JsonReader jsonReader;
+
+    jsonReader.ReadFile(filename);
+}
 
 int CodeGenerator::ParseTemplateBlock(size_t length)
 {
@@ -867,13 +818,7 @@ int CodeGenerator::ParseTemplateBlock(size_t length)
     {
         uint8_t mParseStatePrevious = mParseState;
         mParseState = templateStateTranstionTable[mParseState][charCompressionTable[mParseBuffer[index]]];
-        fprintf(mLogDest, "[%4zu:%2zu] %2u (%c): %2u > %2u\n",
-               mParseLineCount,
-               mParseCharCount,
-               mParseBuffer[index],
-               mParseBuffer[index] > 0x20 ? mParseBuffer[index] : ' ',
-               mParseStatePrevious,
-               mParseState);
+        LOG_STATE_TRANSITION(mParseState, mParseBuffer[index]);
         mParseCharCount++;
         switch (mParseState)
         {
@@ -1077,7 +1022,7 @@ int CodeGenerator::ProcessTag(const uint8_t *buffer, size_t buffer_length)
 {
     Tag *tag = NULL;
 
-    fprintf(mLogDest, "TAG: %s\n", buffer);
+    LOGD("TAG: %s\n", buffer);
 
     if (!_strnicmp((const char*)buffer, "ForEachField", buffer_length))
     {
@@ -1137,8 +1082,7 @@ int CodeGenerator::ProcessTag(const uint8_t *buffer, size_t buffer_length)
         mTagListTail = tag;
     }
 
-    //return tag != NULL ? 0 : 1;
-    return 0;
+    return tag != NULL ? 0 : 1;
 }
 
 int CodeGenerator::Run(int argc, char **argv)
@@ -1151,18 +1095,21 @@ int CodeGenerator::Run(int argc, char **argv)
     }
     else
     {
-        mInputFile = fopen(argv[1], "rb");
+        Logging::OpenLogFile("log.txt");
+        LOGSETLEVEL(LOGGING_LEVEL_DEBUG, LOGGING_LEVEL_INFO);
+
+        /*mInputFile = fopen(argv[1], "rb");
         if (mInputFile == NULL)
         {
-            printf("ERROR: File not found (%s)\n", argv[1]);
+            LOGE("File not found (%s)\n", argv[1]);
             Usage(argv[0]);
             return 1;
-        }
+        }*/
 
         mTemplateFile = fopen(argv[2], "rb");
         if (mTemplateFile == NULL)
         {
-            printf("ERROR: File not found (%s)\n", argv[2]);
+            LOGE("File not found (%s)\n", argv[2]);
             Usage(argv[0]);
             return 1;
         }
@@ -1170,7 +1117,7 @@ int CodeGenerator::Run(int argc, char **argv)
         mOutputFile = fopen(argv[3], "wb");
         if (mOutputFile == NULL)
         {
-            printf("ERROR: Unable to create file: %s\n", argv[3]);
+            LOGE("Unable to create file: %s\n", argv[3]);
             Usage(argv[0]);
             return 1;
         }
@@ -1180,7 +1127,7 @@ int CodeGenerator::Run(int argc, char **argv)
             mLogFile = fopen(argv[4], "wb");
             if (mLogFile == NULL)
             {
-                printf("ERROR: Unable to create file: %s\n", argv[3]);
+                LOGE("Unable to create file: %s\n", argv[3]);
                 Usage(argv[0]);
                 return 1;
             }
@@ -1190,7 +1137,14 @@ int CodeGenerator::Run(int argc, char **argv)
             }
         }
 
+        LOGI("Configuration:\n");
+        LOGI("  Input file    : %s\n", argv[1]);
+        LOGI("  Template file : %s\n", argv[2]);
+        LOGI("  Output file   : %s\n", argv[3]);
+
         mRootDataType = DataTypeTester();
+
+        result = ParseJsonInputFile(argv[1]);
 /*
         result = ParseCsvInputFile();
         if (result != 0)
@@ -1200,12 +1154,12 @@ int CodeGenerator::Run(int argc, char **argv)
             return 1;
         }
 */
-        result = ParseYamlInputFile();
+        //result = ParseYamlInputFile();
 
         result = ParseTemplateInputFile();
         if (result != 0)
         {
-            printf("ERROR: Unable to parse template file\n");
+            LOGE("Unable to parse template file\n");
             Usage(argv[0]);
             return 1;
         }
@@ -1213,7 +1167,7 @@ int CodeGenerator::Run(int argc, char **argv)
         result = VerifyData();
         if (result != 0)
         {
-            printf("ERROR: Unable to verify data\n");
+            LOGE("Unable to verify data\n");
             Usage(argv[0]);
             return 1;
         }
@@ -1221,7 +1175,7 @@ int CodeGenerator::Run(int argc, char **argv)
         result = GenerateOutput();
         if (result != 0)
         {
-            printf("ERROR: Unable to generate output file\n");
+            LOGE("Unable to generate output file\n");
             Usage(argv[0]);
             return 1;
         }
@@ -1240,7 +1194,7 @@ int CodeGenerator::VerifyData()
     Tag *tag    = mTagListHead;
     bool result = true;
 
-    fprintf(mLogDest, "Verifying data...\n");
+    LOGD("Verifying data...\n");
 
     while (tag != NULL && result)
     {
@@ -1251,7 +1205,7 @@ int CodeGenerator::VerifyData()
         tag = tag->GetNextTag();
     }
 
-    fprintf(mLogDest, "Verifying complete\n");
+    LOGD("Verifying complete\n");
 
     return result ? 0 : -1;
 }
