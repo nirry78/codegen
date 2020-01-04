@@ -16,7 +16,7 @@ MessageField::MessageField(json& object):
                 LOGE("Expecting string\n");
             }            
         }
-        else if (!key.compare("identifier"))
+        else if (!key.compare("type"))
         {
             DecodeFieldType(value);
         }
@@ -24,7 +24,7 @@ MessageField::MessageField(json& object):
         {
             if (value.is_string())
             {
-                
+                mValue = value.get<std::string>();
             }
             else if (value.is_array())
             {
@@ -90,4 +90,69 @@ void MessageField::DecodeFieldType(json& object)
             mSize = 16;
         }
     }
+}
+
+bool MessageField::Output(FILE *outputFile, const char *name)
+{
+    if (!strcasecmp(name, "name"))
+    {
+        fprintf(outputFile, "%s", mName.c_str());
+    }
+    else if (!strcasecmp(name, "type"))
+    {
+        switch (mType)
+        {
+            case MFT_UINT8:
+            {
+                fprintf(outputFile, "uint8_t");
+                break;
+            }
+            case MFT_UINT16:
+            {
+                fprintf(outputFile, "uint16_t");
+                break;
+            }
+            case MFT_UINT32:
+            {
+                fprintf(outputFile, "uint32_t");
+                break;
+            }
+            case MFT_UINT64:
+            {
+                fprintf(outputFile, "uint64_t");
+                break;
+            }
+            case MFT_INT8:
+            {
+                fprintf(outputFile, "int8_t");
+                break;
+            }
+            case MFT_INT16:
+            {
+                fprintf(outputFile, "int16_t");
+                break;
+            }
+            case MFT_INT32:
+            {
+                fprintf(outputFile, "int32_t");
+                break;
+            }
+            case MFT_INT64:
+            {
+                fprintf(outputFile, "int64_t");
+                break;
+            }
+            case MFT_UUID:
+            {
+                fprintf(outputFile, "uuid _t");
+                break;
+            }
+            default:
+            {
+                break;
+            }
+        }
+    }
+
+    return true;
 }

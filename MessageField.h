@@ -32,7 +32,8 @@ class MessageField
         void                DecodeFieldType(json& object);
     public:
                             MessageField(json& object);
-        virtual             ~MessageField();    
+        virtual             ~MessageField();   
+        bool                Output(FILE *outputFile, const char *name);
 };
 
 #endif /* _MESSAGE_FIELD_H */

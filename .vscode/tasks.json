@@ -16,7 +16,7 @@
         {
             "label": "Clean",
             "type": "shell",
-            "command": "make -C output clean"
+            "command": "make -C output/debug -j14 clean && make -s -C output/release -j14 clean"
         }
     ]
 }

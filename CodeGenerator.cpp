@@ -213,9 +213,9 @@ int Record::Output(FILE *output, size_t index, TagStyle style, TagConvert conver
 }
 
 Tag::Tag(TagType tag_type, const uint8_t *buffer, size_t length):
-    mTagType(tag_type),
-    mBufferLength(length),
     mNextTag(NULL),
+    mBufferLength(length),
+    mTagType(tag_type),
     mTagStyle(TAG_STYLE_STANDARD),
     mTagConvert(TAG_CONVERT_NONE),
     mName(NULL),
@@ -302,6 +302,10 @@ bool Tag::IsValid()
                 result = false;
             }
             break;
+        default:
+        {
+            break;
+        }
     }
 
     return result;
@@ -368,6 +372,10 @@ int Tag::SetFieldValue(TagFieldType fieldType, const uint8_t *buffer, size_t len
             {
                 mTagConvert = TAG_CONVERT_C;
             }
+        }
+        default:
+        {
+
         }
     }
 
@@ -469,7 +477,7 @@ int CodeGenerator::FieldValue(const uint8_t *buffer, size_t buffer_length)
 int CodeGenerator::GenerateOutput()
 {
     Tag *tag                 = mTagListHead;
-    Tag *foreachNamespaceTag = NULL;
+//    Tag *foreachNamespaceTag = NULL;
     Tag *foreachContainerTag = NULL;
     Tag *foreachFieldTag     = NULL;
     int result               = 0;
@@ -485,9 +493,12 @@ int CodeGenerator::GenerateOutput()
         switch (tag->GetTagType())
         {
             case TAG_TYPE_DATA:
+                LOGD("[OUT] Data\n");
                 result = tag->Output(mOutputFile);
                 break;
             case TAG_TYPE_FOREACH_CONTAINER_BEGIN:
+                LOGD("[OUT] Foreach container begin (TAG: %c)\n", foreachContainerTag != NULL ? 'y' : 'n');
+
                 if (foreachContainerTag != NULL)
                 {
                     LOGE("Foreach tag found inside container loop\n");
@@ -521,6 +532,7 @@ int CodeGenerator::GenerateOutput()
                 break;
             case TAG_TYPE_FOREACH_CONTAINER_END:
                 mContainerDataType = mNamespaceDataType->Next();
+                LOGD("[OUT] Foreach container end (Continue: %c)\n", mContainerDataType != NULL ? 'y' : 'n');
                 if (mContainerDataType != NULL)
                 {
                     tag = foreachContainerTag;
@@ -531,6 +543,7 @@ int CodeGenerator::GenerateOutput()
                 }
                 break;
             case TAG_TYPE_FOREACH_FIELD_BEGIN:
+                LOGD("[OUT] Foreach field begin (Tag: %c)\n", foreachFieldTag != NULL ? 'y' : 'n');
                 if (foreachFieldTag != NULL)
                 {
                     LOGE("Foreach tag found inside loop\n");
@@ -551,6 +564,7 @@ int CodeGenerator::GenerateOutput()
                 break;
             case TAG_TYPE_FOREACH_FIELD_END:
                 mFieldDataType = mContainerDataType->Next();
+                LOGD("[OUT] Foreach field end (Continue: %c)\n", mFieldDataType != NULL ? 'y' : 'n');
                 if (mFieldDataType != NULL)
                 {
                     tag = foreachFieldTag;
@@ -590,12 +604,135 @@ int CodeGenerator::GenerateOutput()
                     fprintf(mOutputFile, ",");
                 }
                 break;
+            default:
+                break;
         }
 
         tag = tag->GetNextTag();
     }
 
     fprintf(mLogDest, "Generating output complete\n");
+
+    return 0;
+}
+
+int CodeGenerator::GenerateOutputJson()
+{
+    Tag *tag                 = mTagListHead;
+//    Tag *foreachNamespaceTag = NULL;
+    Tag *foreachContainerTag = NULL;
+    Tag *foreachFieldTag     = NULL;
+    int result               = 0;
+
+    LOGI("Generating output...\n");
+
+    mContainerDataType = NULL;
+    mFieldDataType     = NULL;
+    
+    mJsonReader.SelectNamespace("*");
+
+    while (tag != NULL && result == 0)
+    {
+        switch (tag->GetTagType())
+        {
+            case TAG_TYPE_DATA:
+                LOGD("[OUT] Data\n");
+                result = tag->Output(mOutputFile);
+                break;
+            case TAG_TYPE_FOREACH_CONTAINER_BEGIN:
+                LOGD("[OUT] Foreach container begin (TAG: %c)\n", foreachContainerTag != NULL ? 'y' : 'n');
+                if (foreachContainerTag != NULL)
+                {
+                    LOGE("Foreach tag found inside container loop\n");
+                    result = -1;
+                }
+                else if (mNamespaceDataType == NULL)
+                {
+                    LOGE("No namespace selected\n");
+                    result = -1;
+                }
+                else if (mFieldDataType != NULL)
+                {
+                    LOGE("Internal error as field is currently selected\n");
+                    result = -1;
+                }
+                else
+                {
+                    if (mJsonReader.ForeachContainerReset())
+                    {
+                        foreachContainerTag = tag;
+                    }
+                    else
+                    {
+                        LOGE("No containers exists\n");
+                        result = -1;
+                    }
+                }
+                break;
+            case TAG_TYPE_FOREACH_CONTAINER_END:
+                if (mJsonReader.ForeachContainerNext())
+                {
+                    tag = foreachContainerTag;
+                }
+                else
+                {
+                    foreachContainerTag = NULL;
+                }
+                LOGD("[OUT] Foreach container end (Continue: %c)\n", foreachContainerTag != NULL ? 'y' : 'n');
+                break;
+            case TAG_TYPE_FOREACH_FIELD_BEGIN:
+                LOGD("[OUT] Foreach field begin (TAG: %c)\n", foreachContainerTag != NULL ? 'y' : 'n');
+                if (mJsonReader.ForeachFieldReset())
+                {
+                    foreachFieldTag = tag;
+                }
+                else
+                {
+                    LOGE("Foreach tag found inside loop\n");
+                    result = -1;
+                }
+                break;
+            case TAG_TYPE_FOREACH_FIELD_END:
+                if (mJsonReader.ForeachFieldNext())
+                {
+                    tag = foreachFieldTag;
+                }
+                else
+                {
+                    foreachFieldTag = NULL;
+                }
+                LOGD("[OUT] Foreach field end (Continue: %c)\n", foreachFieldTag != NULL ? 'y' : 'n');
+                break;
+            case TAG_TYPE_FIELD:
+                LOGD("[OUT] Field (Name: %s)\n", tag->GetName());
+                if (!mJsonReader.OutputField(mOutputFile, (const char*)tag->GetName()))
+                {
+                    LOGE("Not inside field loop\n");
+                    result = -1;
+                }
+                break;
+            case TAG_TYPE_CONTAINER:
+                LOGD("[OUT] Container (Name: %s)\n", tag->GetName());
+                if (!mJsonReader.OutputContainer(mOutputFile, (const char*)tag->GetName()))
+                {
+                    LOGE("Not inside container loop\n");
+                    result = -1;
+                }
+                break;
+            case TAG_TYPE_FIELD_COUNT:
+                break;
+            case TAG_TYPE_SEPARATOR:
+                if (mContainerDataType && mContainerDataType->HasMoreDataTypes())
+                {
+                    fprintf(mOutputFile, ",");
+                }
+                break;
+            default:
+                break;
+        }
+
+        tag = tag->GetNextTag();
+    }
 
     return 0;
 }
@@ -607,7 +744,6 @@ int CodeGenerator::ParseCsvBlock(const char delimiter, size_t length)
 
     for (index = 0; index < length; index++)
     {
-        uint8_t mParseStatePrevious = mParseState;
         mParseState = cvsStateTranstionTable[mParseState][charCompressionTable[mParseBuffer[index]]];
         mParseCharCount++;
         switch (mParseState)
@@ -724,9 +860,6 @@ int CodeGenerator::ParseCsvInputFile()
 {
     int result = 0;
     size_t ret, index, total = 0;
-    uint32_t linesScanned = 0;
-    uint8_t specialCharCounterInitial = 0;
-    uint8_t specialCharCounterScanning = 0;
     bool delimiterDetermined = false;
     bool singleQuote = false;
     bool doubleQuote = false;
@@ -804,9 +937,9 @@ int CodeGenerator::ParseYamlInputFile()
 
 int CodeGenerator::ParseJsonInputFile(const char *filename)
 {
-    JsonReader jsonReader;
+    mJsonReader.ReadFile(filename);
 
-    jsonReader.ReadFile(filename);
+    return 0;
 }
 
 int CodeGenerator::ParseTemplateBlock(size_t length)
@@ -816,7 +949,6 @@ int CodeGenerator::ParseTemplateBlock(size_t length)
 
     for (index = 0; index < length && result == 0; index++)
     {
-        uint8_t mParseStatePrevious = mParseState;
         mParseState = templateStateTranstionTable[mParseState][charCompressionTable[mParseBuffer[index]]];
         LOG_STATE_TRANSITION(mParseState, mParseBuffer[index]);
         mParseCharCount++;
@@ -998,7 +1130,7 @@ int CodeGenerator::ParseTemplateBlock(size_t length)
 int CodeGenerator::ParseTemplateInputFile()
 {
     int result = 0;
-    size_t ret, total = 0;
+    size_t ret;
 
     mParseState        = 0;
     mParseOutputOffset = 0;
@@ -1172,7 +1304,7 @@ int CodeGenerator::Run(int argc, char **argv)
             return 1;
         }
 
-        result = GenerateOutput();
+        result = GenerateOutputJson();
         if (result != 0)
         {
             LOGE("Unable to generate output file\n");

@@ -106,12 +106,12 @@ class CodeGenerator
         FILE            *mLogDest;
         uint8_t         mParseBuffer[4096];
         uint8_t         mParseOutput[1024];
+        uint8_t         mParseState;
         size_t          mParseOutputOffset;
         size_t          mParseFieldCount;
         size_t          mParseCharCount;
         size_t          mParseLineCount;
         bool            mParseTagOnly;
-        uint8_t         mParseState;
         Record          *mCurrentRecord;
         Record          *mRecordListHead;
         Record          *mRecordListTail;
@@ -126,10 +126,14 @@ class CodeGenerator
         DataType        *mFieldDataType;
         DataType        *mNamespaceDataType;
 
+        JsonReader      mJsonReader;
+
+
         int             AddTag();
         int             FieldName(const uint8_t *tag, size_t tag_length);
         int             FieldValue(const uint8_t *tag, size_t tag_length);
         int             GenerateOutput();
+        int             GenerateOutputJson();
         int             ParseCsvBlock(const char delimiter, size_t length);
         int             ParseCsvInputFile();
         int             ParseYamlInputFile();

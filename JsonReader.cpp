@@ -27,30 +27,7 @@ void JsonReader::VerifyMessages(json& object)
 
 void JsonReader::VerifyParameters(Message& message, json& object)
 {
-    uint32_t index = 0;
-    LOGD("  Fields:\n");
-    for (auto& [arrayKey, arrayValue] : object.items()) 
-    {
-        if (arrayValue.is_object())
-        {
-            
-            LOGD("    [%u]:\n", index++);
-/*            for (auto& [key, value] : arrayValue.items()) 
-            {
-                if (!key.compare("name"))
-                {
-                    LOGD("      Name: %s\n", value.get<std::string>().c_str());
-                }
-                else if (!key.compare("type"))
-                {
-                    if (value.is_string())
-                    {
-                        LOGD("      Type: %s\n", value.get<std::string>().c_str());
-                    }
-                }
-            }*/
-        }
-    }
+
 }
 
 bool JsonReader::ReadFile(const char *filename)
@@ -89,7 +66,9 @@ bool JsonReader::ReadFile(const char *filename)
             {
                 std::cout << key << " : " << value << "\n";
             }
-        }   
+        }
+
+        ForeachContainerReset();
     }
     catch(const std::exception& e)
     {
@@ -99,3 +78,71 @@ bool JsonReader::ReadFile(const char *filename)
 
     return result;
 }
+
+bool JsonReader::SelectNamespace(const char *value)
+{
+    bool result = false;
+
+    return result;
+}
+
+bool JsonReader::ForeachContainerReset()
+{
+    mMessageIterator = mMessageList.begin();
+
+    return (mMessageIterator != mMessageList.end());
+}
+
+bool JsonReader::ForeachContainerNext()
+{
+    return ((++mMessageIterator) != mMessageList.end());
+}
+
+bool JsonReader::ForeachFieldReset()
+{
+    bool result = false;
+
+    if (mMessageIterator != mMessageList.end())
+    {
+        result = (*mMessageIterator).ForeachFieldReset();
+    }   
+
+    return result;
+}
+
+bool JsonReader::ForeachFieldNext()
+{
+    bool result = false;
+
+    if (mMessageIterator != mMessageList.end())
+    {
+        result = (*mMessageIterator).ForeachFieldNext();
+    }   
+
+    return result;
+}
+
+bool JsonReader::OutputContainer(FILE *outputFile, const char *name)
+{
+    bool result = false;
+
+    if (mMessageIterator != mMessageList.end())
+    {
+        result = (*mMessageIterator).Output(outputFile, name);
+    }
+
+    return result;
+}
+
+bool JsonReader::OutputField(FILE *outputFile, const char *name)
+{
+    bool result = true;
+
+    if (mMessageIterator != mMessageList.end())
+    {
+        result = (*mMessageIterator).OutputField(outputFile, name);
+    }
+
+    return result;
+}
+

@@ -16,8 +16,9 @@ using json = nlohmann::json;
 class JsonReader
 {
     private:
-        json                    mJsonObject;
-        std::list <Message>     mMessageList;
+        json                            mJsonObject;
+        std::list <Message>             mMessageList;
+        std::list<Message>::iterator    mMessageIterator;
 
         void    VerifyMessages(json& object);
         void    VerifyParameters(Message& message, json& object);
@@ -25,6 +26,13 @@ class JsonReader
                 JsonReader();
         virtual ~JsonReader();
         bool    ReadFile(const char *filename);
+        bool    SelectNamespace(const char *value);
+        bool    ForeachContainerReset();
+        bool    ForeachContainerNext();
+        bool    ForeachFieldReset();
+        bool    ForeachFieldNext();
+        bool    OutputContainer(FILE *outputFile, const char *name);
+        bool    OutputField(FILE *outputFile, const char *name);
 };
 
 #endif /* _JSON_READER_H */

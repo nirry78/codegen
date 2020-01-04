@@ -26,11 +26,46 @@ Message::Message(json& object)
             LOGE("Message has unregonized key: %s\n", key.c_str());
         }
     }
+
+    ForeachFieldReset();
 }
 
 Message::~Message()
 {
 
+}
+
+bool Message::ForeachFieldReset()
+{
+    mFieldIterator = mFieldList.begin();
+
+    return (mFieldIterator != mFieldList.end());
+}
+
+bool Message::ForeachFieldNext()
+{
+    return ((++mFieldIterator) != mFieldList.end());
+}
+
+bool Message::Output(FILE *outputFile, const char *name)
+{
+    bool result = true;
+
+    fprintf(outputFile, "%s", mName.c_str());
+
+    return result;
+}
+
+bool Message::OutputField(FILE *outputFile, const char *name)
+{
+    bool result = false;
+
+    if (mFieldIterator != mFieldList.end())
+    {
+        result = mFieldIterator->Output(outputFile, name);
+    }
+
+    return result;
 }
 
 void Message::ParseParameters(json& object)
