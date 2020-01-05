@@ -212,176 +212,6 @@ int Record::Output(FILE *output, size_t index, TagStyle style, TagConvert conver
     return result;
 }
 
-Tag::Tag(TagType tag_type, const uint8_t *buffer, size_t length):
-    mNextTag(NULL),
-    mBufferLength(length),
-    mTagType(tag_type),
-    mTagStyle(TAG_STYLE_STANDARD),
-    mTagConvert(TAG_CONVERT_NONE),
-    mName(NULL),
-    mNameLength(0)
-{
-    mBuffer = new uint8_t[length];
-    if (mBuffer != NULL)
-    {
-        memcpy(mBuffer, buffer, length);
-    }
-}
-
-Tag::~Tag()
-{
-    if (mBuffer != NULL)
-    {
-        delete mBuffer;
-    }
-
-    if (mName != NULL)
-    {
-        delete mName;
-    }
-}
-
-void Tag::Dump(FILE *output)
-{
-    switch (mTagType)
-    {
-        case TAG_TYPE_DATA:
-            LOGD("TAG[DATA:%u]\n", mBufferLength);
-            break;
-        case TAG_TYPE_FOREACH_FIELD_BEGIN:
-            LOGD("TAG[FOREACH_FIELD_BEGIN]\n");
-            break;
-        case TAG_TYPE_FOREACH_FIELD_END:
-            LOGD("TAG[FOREACH_FIELD_END]\n");
-            break;
-        case TAG_TYPE_FOREACH_NAMESPACE_BEGIN:
-            LOGD("TAG[FOREACH_NAMESPACE_BEGIN]\n");
-            break;
-        case TAG_TYPE_FOREACH_NAMESPACE_END:
-            LOGD("TAG[FOREACH_NAMESPACE_END]\n");
-            break;
-        case TAG_TYPE_FOREACH_CONTAINER_BEGIN:
-            LOGD("TAG[FOREACH_CONTAINER_BEGIN]\n");
-            break;
-        case TAG_TYPE_FOREACH_CONTAINER_END:
-            LOGD("TAG[FOREACH_CONTAINER_END]\n");
-            break;
-        case TAG_TYPE_FIELD:
-            LOGD("TAG[FIELD] Name:%s\n", mName ? (char*)mName : "N/A");
-            break;
-        case TAG_TYPE_FIELD_COUNT:
-            LOGD("TAG[FIELD_COUNT]\n");
-            break;
-        default:
-            LOGD("TAG[UNKNOWN]\n");
-            break;
-    }
-}
-
-bool Tag::IsNameEqual(const char *reference)
-{
-    bool result = false;
-
-    if (mName != NULL)
-    {
-        result = !_strnicmp(reference, (char*)mName, mNameLength);
-    }
-
-    return result;
-}
-
-bool Tag::IsValid()
-{
-    bool result = true;
-
-    switch (mTagType)
-    {
-        case TAG_TYPE_FIELD:
-            if (mName == NULL)
-            {
-                result = false;
-            }
-            break;
-        default:
-        {
-            break;
-        }
-    }
-
-    return result;
-}
-
-int Tag::Output(FILE *output)
-{
-    return fwrite(mBuffer, 1, mBufferLength, output) == mBufferLength ? 0 : -1;
-}
-
-int Tag::OutputField(FILE *output, Record *record, uint32_t index)
-{
-    int result = 0;
-
-    if (mName != NULL)
-    {
-        result = record->Output(output, index, mTagStyle, mTagConvert);
-    }
-    else
-    {
-        result = -1;
-    }
-
-    return result;
-}
-
-int Tag::SetFieldValue(TagFieldType fieldType, const uint8_t *buffer, size_t length)
-{
-    int result = 0;
-
-    switch (fieldType)
-    {
-        case TAG_FIELD_TYPE_NAME:
-        {
-            if (mName == NULL)
-            {
-                mName = new uint8_t[length];
-                if (mName != NULL)
-                {
-                    memcpy(mName, buffer, length);
-                    mNameLength = length;
-                }
-            }
-            else
-            {
-                result = -1;
-            }
-            break;
-        }
-        case TAG_FIELD_TYPE_STYLE:
-        {
-            if (!_strnicmp("upper", (char*)buffer, length) || !_strnicmp("uppercase", (char*)buffer, length))
-            {
-                mTagStyle = TAG_STYLE_UPPERCASE;
-            }
-            else if (!_strnicmp("lower", (char*)buffer, length) || !_strnicmp("lowercase", (char*)buffer, length))
-            {
-                mTagStyle = TAG_STYLE_LOWERCASE;
-            }
-        }
-        case TAG_FIELD_TYPE_CONVERT:
-        {
-            if (!_strnicmp("c-style", (char*)buffer, length))
-            {
-                mTagConvert = TAG_CONVERT_C;
-            }
-        }
-        default:
-        {
-
-        }
-    }
-
-    return result;
-}
-
 CodeGenerator::CodeGenerator():
     mInputFile(NULL), mOutputFile(NULL), mTemplateFile(NULL), mLogFile(NULL), mLogDest(stdout), mParseState(0),
     mParseOutputOffset(0), mParseFieldCount(0), mParseCharCount(0), mParseLineCount(0), mCurrentRecord(NULL),
@@ -646,11 +476,11 @@ int CodeGenerator::GenerateOutputJson()
                     LOGE("Foreach tag found inside container loop\n");
                     result = -1;
                 }
-                else if (mNamespaceDataType == NULL)
+                /*else if (mNamespaceDataType == NULL)
                 {
                     LOGE("No namespace selected\n");
                     result = -1;
-                }
+                }*/
                 else if (mFieldDataType != NULL)
                 {
                     LOGE("Internal error as field is currently selected\n");
@@ -705,15 +535,15 @@ int CodeGenerator::GenerateOutputJson()
                 break;
             case TAG_TYPE_FIELD:
                 LOGD("[OUT] Field (Name: %s)\n", tag->GetName());
-                if (!mJsonReader.OutputField(mOutputFile, (const char*)tag->GetName()))
+                if (!mJsonReader.OutputField(mOutputFile, (const char*)tag->GetName(), tag))
                 {
                     LOGE("Not inside field loop\n");
                     result = -1;
-                }
+                }       
                 break;
             case TAG_TYPE_CONTAINER:
                 LOGD("[OUT] Container (Name: %s)\n", tag->GetName());
-                if (!mJsonReader.OutputContainer(mOutputFile, (const char*)tag->GetName()))
+                if (!mJsonReader.OutputContainer(mOutputFile, (const char*)tag->GetName(), tag))
                 {
                     LOGE("Not inside container loop\n");
                     result = -1;

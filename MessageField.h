@@ -5,6 +5,7 @@
 #include <string>
 #include <nlohmann/json.hpp>
 #include "Logging.h"
+#include "Tag.h"
 
 using json = nlohmann::json;
 
@@ -33,7 +34,7 @@ class MessageField
     public:
                             MessageField(json& object);
         virtual             ~MessageField();   
-        bool                Output(FILE *outputFile, const char *name);
+        bool                Output(FILE *outputFile, const char *name, Tag* tag);
 };
 
 #endif /* _MESSAGE_FIELD_H */

@@ -92,11 +92,48 @@ void MessageField::DecodeFieldType(json& object)
     }
 }
 
-bool MessageField::Output(FILE *outputFile, const char *name)
+bool MessageField::Output(FILE *outputFile, const char *name, Tag* tag)
 {
     if (!strcasecmp(name, "name"))
     {
-        fprintf(outputFile, "%s", mName.c_str());
+        if (tag->GetTagStyle() == TAG_STYLE_LOWERCASE)
+        {
+            bool first = true;
+            for ( std::string::iterator it = mName.begin(); it != mName.end(); ++it)
+            {
+                if (first)
+                {
+                    first = false;
+                }
+                else if (std::isupper(*it))
+                {
+                    fputc('_', outputFile);    
+                }
+
+                fputc(std::tolower(*it), outputFile);
+            }
+        }
+        else if (tag->GetTagStyle() == TAG_STYLE_UPPERCASE)
+        {
+            bool first = true;
+            for ( std::string::iterator it = mName.begin(); it != mName.end(); ++it)
+            {
+                if (first)
+                {
+                    first = false;
+                }
+                else if (std::isupper(*it))
+                {
+                    fputc('_', outputFile);    
+                }
+                
+                fputc(std::toupper(*it), outputFile);
+            }
+        }
+        else
+        {
+            fprintf(outputFile, "%s",  mName.c_str());
+        }
     }
     else if (!strcasecmp(name, "type"))
     {
@@ -144,7 +181,7 @@ bool MessageField::Output(FILE *outputFile, const char *name)
             }
             case MFT_UUID:
             {
-                fprintf(outputFile, "uuid _t");
+                fprintf(outputFile, "uuid_t");
                 break;
             }
             default:
@@ -153,6 +190,11 @@ bool MessageField::Output(FILE *outputFile, const char *name)
             }
         }
     }
+    else
+    {
+        LOGD("Unsupported field: %s\n", name);
+    }
+    
 
     return true;
 }

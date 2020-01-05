@@ -47,7 +47,7 @@ bool Message::ForeachFieldNext()
     return ((++mFieldIterator) != mFieldList.end());
 }
 
-bool Message::Output(FILE *outputFile, const char *name)
+bool Message::Output(FILE *outputFile, const char *name, Tag* tag)
 {
     bool result = true;
 
@@ -56,13 +56,13 @@ bool Message::Output(FILE *outputFile, const char *name)
     return result;
 }
 
-bool Message::OutputField(FILE *outputFile, const char *name)
+bool Message::OutputField(FILE *outputFile, const char *name, Tag* tag)
 {
     bool result = false;
 
     if (mFieldIterator != mFieldList.end())
     {
-        result = mFieldIterator->Output(outputFile, name);
+        result = mFieldIterator->Output(outputFile, name, tag);
     }
 
     return result;

@@ -4,10 +4,26 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Build",
+            "label": "Debug build",
             "type": "shell",
-            "command": "make -s -C output/debug -j14 && make -s -C output/release -j14",
+            "command": "make -s -C output/debug -j14",
             "problemMatcher": { "base": "$gcc", "fileLocation": "absolute" },
+            "presentation": {
+                "reveal": "silent"
+            }            
+        },
+        {
+            "label": "Release build",
+            "type": "shell",
+            "command": "make -s -C output/release -j14",
+            "problemMatcher": { "base": "$gcc", "fileLocation": "absolute" },
+            "presentation": {
+                "reveal": "silent"
+            }            
+        },
+        {
+            "label": "Build",
+            "dependsOn": ["Debug build", "Release build"],
             "group": {
                 "kind": "build",
                 "isDefault": true

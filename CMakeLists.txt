@@ -14,8 +14,6 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall")
 #endif()
 
 set(SRCS 
-    #DataStore.csv
-    #DataStore.cpp
     JsonReader.h
     JsonReader.cpp
     Logging.h
@@ -26,6 +24,8 @@ set(SRCS
     Message.cpp
     MessageField.h
     MessageField.cpp
+    Tag.cpp
+    Tag.h
     CodeGenerator.cpp)
 
 set_source_files_properties(DataStore.template.cpp PROPERTIES HEADER_FILE_ONLY TRUE)

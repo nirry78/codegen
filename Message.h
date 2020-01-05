@@ -7,6 +7,7 @@
 
 #include "Logging.h"
 #include "MessageField.h"
+#include "Tag.h"
 
 using json = nlohmann::json;
 
@@ -25,8 +26,8 @@ class Message
         bool                    ForeachFieldReset();
         bool                    ForeachFieldNext();
         bool                    IsValid();
-        bool                    Output(FILE *outputFile, const char *name);
-        bool                    OutputField(FILE *outputFile, const char *name);
+        bool                    Output(FILE *outputFile, const char *name, Tag* tag);
+        bool                    OutputField(FILE *outputFile, const char *name, Tag* tag);
         void                    SetName(std::string& name) { mName = name; }
 };
 

@@ -122,25 +122,25 @@ bool JsonReader::ForeachFieldNext()
     return result;
 }
 
-bool JsonReader::OutputContainer(FILE *outputFile, const char *name)
+bool JsonReader::OutputContainer(FILE *outputFile, const char *name, Tag* tag)
 {
     bool result = false;
 
     if (mMessageIterator != mMessageList.end())
     {
-        result = (*mMessageIterator).Output(outputFile, name);
+        result = (*mMessageIterator).Output(outputFile, name, tag);
     }
 
     return result;
 }
 
-bool JsonReader::OutputField(FILE *outputFile, const char *name)
+bool JsonReader::OutputField(FILE *outputFile, const char *name, Tag* tag)
 {
     bool result = true;
 
     if (mMessageIterator != mMessageList.end())
     {
-        result = (*mMessageIterator).OutputField(outputFile, name);
+        result = (*mMessageIterator).OutputField(outputFile, name, tag);
     }
 
     return result;

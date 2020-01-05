@@ -10,7 +10,7 @@ class DataStore
 {
     private:
 @ForEachField
-        @Field{name='type'} m@Field{name='name'};
+        @Field{name='type'} m@Field{name='name', style='lower'};
 @EndForEachField
 
     public:

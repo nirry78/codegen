@@ -9,7 +9,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/output/debug/code_generator",
-            "args": ["${workspaceFolder}/test/data.json", "${workspaceFolder}/DataStore.template.h", "${workspaceFolder}/output/DataStore.h"],
+            "args": ["${workspaceFolder}/test/data.json", "${workspaceFolder}/DataStore.template.cpp", "${workspaceFolder}/output/DataStore.cpp"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
