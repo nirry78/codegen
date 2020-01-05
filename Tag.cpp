@@ -94,24 +94,6 @@ int Tag::Output(FILE *output)
     return fwrite(mBuffer, 1, mBufferLength, output) == mBufferLength ? 0 : -1;
 }
 
-/*
-int Tag::OutputField(FILE *output, Record *record, uint32_t index)
-{
-    int result = 0;
-
-    if (mName != NULL)
-    {
-        result = record->Output(output, index, mTagStyle, mTagConvert);
-    }
-    else
-    {
-        result = -1;
-    }
-
-    return result;
-}
-*/
-
 int Tag::SetFieldValue(TagFieldType fieldType, const uint8_t *buffer, size_t length)
 {
     int result = 0;
@@ -121,6 +103,7 @@ int Tag::SetFieldValue(TagFieldType fieldType, const uint8_t *buffer, size_t len
         case TAG_FIELD_TYPE_NAME:
         {
             mName.assign((const char*)buffer, length);
+            LOGD("<Tag::SetFieldValue> Name: %s\n", mName.c_str());
             break;
         }
         case TAG_FIELD_TYPE_STYLE:
@@ -128,11 +111,19 @@ int Tag::SetFieldValue(TagFieldType fieldType, const uint8_t *buffer, size_t len
             if (!_strnicmp("upper", (char*)buffer, length) || !_strnicmp("uppercase", (char*)buffer, length))
             {
                 mTagStyle = TAG_STYLE_UPPERCASE;
+
+                LOGD("<Tag::SetFieldValue> Style: Uppercase\n");
             }
             else if (!_strnicmp("lower", (char*)buffer, length) || !_strnicmp("lowercase", (char*)buffer, length))
             {
                 mTagStyle = TAG_STYLE_LOWERCASE;
+
+                LOGD("<Tag::SetFieldValue> Style: Lowercase\n");
             }
+            else
+            {
+                LOGD("<Tag::SetFieldValue> Style: Default\n");
+            }   
         }
         case TAG_FIELD_TYPE_CONVERT:
         {

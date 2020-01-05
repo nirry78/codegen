@@ -9,7 +9,7 @@
 #include <list>
 #include <nlohmann/json.hpp>
 #include "Logging.h"
-#include "Message.h"
+#include "Container.h"
 
 using json = nlohmann::json;
 
@@ -17,11 +17,11 @@ class JsonReader
 {
     private:
         json                            mJsonObject;
-        std::list <Message>             mMessageList;
-        std::list<Message>::iterator    mMessageIterator;
+        std::list<Container>            mContainerList;
+        std::list<Container>::iterator  mContainerIterator;
 
-        void    VerifyMessages(json& object);
-        void    VerifyParameters(Message& message, json& object);
+        void    VerifyContainer(json& object);
+        void    VerifyParameters(Container& container, json& object);
     public:
                 JsonReader();
         virtual ~JsonReader();

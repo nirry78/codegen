@@ -14,32 +14,31 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall")
 #endif()
 
 set(SRCS 
-    JsonReader.h
+    Container.cpp
+    Formatter.cpp
     JsonReader.cpp
-    Logging.h
     Logging.cpp
-    DataStore.template.cpp
-    DataType.cpp
-    Message.h
-    Message.cpp
-    MessageField.h
     MessageField.cpp
     Tag.cpp
-    Tag.h
     CodeGenerator.cpp)
 
 set_source_files_properties(DataStore.template.cpp PROPERTIES HEADER_FILE_ONLY TRUE)
 
 set(HDRS
-    #DataStore.h
-    #DataStore.template.h
-    DataType.h
-    CodeGenerator.h)
+    Container.h
+    CodeGenerator.h
+    Formatter.h
+    Logging.h
+    JsonReader.h
+    MessageField.h
+    Tag.h)
 
 if(WIN32)
     set (APP_NAME CodeGenerator)
+    set (TEST_APP_NAME TestCodeGenerator)
 else()
     set (APP_NAME code_generator)
+    set (TEST_APP_NAME test_code_generator)
 endif()
 
 add_definitions("-D_CRT_SECURE_NO_WARNINGS")
@@ -48,3 +47,23 @@ add_executable(${APP_NAME} ${SRCS} ${HDRS})
 set_target_properties(${APP_NAME} PROPERTIES CXX_STANDARD 17)
 
 target_link_libraries(${APP_NAME} PRIVATE nlohmann_json::nlohmann_json)
+
+add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/DataStore.h
+                   COMMAND ${CMAKE_BINARY_DIR}/${APP_NAME} 
+                           "${CMAKE_SOURCE_DIR}/test/data.json" 
+                           "${CMAKE_SOURCE_DIR}/DataStore.template.h" 
+                           "${CMAKE_BINARY_DIR}/DataStore.h"
+                           "${CMAKE_BINARY_DIR}/DataStore.h.log"
+                   DEPENDS ${APP_NAME} test/data.json DataStore.template.h)
+
+add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/DataStore.cpp
+                   COMMAND ${CMAKE_BINARY_DIR}/${APP_NAME} 
+                           "${CMAKE_SOURCE_DIR}/test/data.json" 
+                           "${CMAKE_SOURCE_DIR}/DataStore.template.cpp" 
+                           "${CMAKE_BINARY_DIR}/DataStore.cpp"
+                           "${CMAKE_BINARY_DIR}/DataStore.cpp.log"
+                   DEPENDS ${APP_NAME} test/data.json DataStore.template.cpp)
+
+include_directories(${CMAKE_SOURCE_DIR})
+
+add_executable(${TEST_APP_NAME} ${CMAKE_BINARY_DIR}/DataStore.cpp ${CMAKE_BINARY_DIR}/DataStore.h)

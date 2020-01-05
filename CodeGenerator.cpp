@@ -1,6 +1,5 @@
 #include "Platform.h"
 #include "CodeGenerator.h"
-#include "DataType.h"
 #include "Logging.h"
 #include <iostream>
 #include <fstream>
@@ -291,6 +290,10 @@ int CodeGenerator::FieldName(const uint8_t *buffer, size_t buffer_length)
     {
         mNextFieldType = TAG_FIELD_TYPE_CONVERT;
     }
+    else if (!_strnicmp((const char*)buffer, "Length", buffer_length))
+    {
+        mNextFieldType = TAG_FIELD_TYPE_LENGTH;
+    }
     else
     {
         result = -1;
@@ -306,6 +309,7 @@ int CodeGenerator::FieldValue(const uint8_t *buffer, size_t buffer_length)
 
 int CodeGenerator::GenerateOutput()
 {
+#if 0
     Tag *tag                 = mTagListHead;
 //    Tag *foreachNamespaceTag = NULL;
     Tag *foreachContainerTag = NULL;
@@ -442,14 +446,13 @@ int CodeGenerator::GenerateOutput()
     }
 
     fprintf(mLogDest, "Generating output complete\n");
-
+#endif
     return 0;
 }
 
 int CodeGenerator::GenerateOutputJson()
 {
     Tag *tag                 = mTagListHead;
-//    Tag *foreachNamespaceTag = NULL;
     Tag *foreachContainerTag = NULL;
     Tag *foreachFieldTag     = NULL;
     int result               = 0;
@@ -552,7 +555,7 @@ int CodeGenerator::GenerateOutputJson()
             case TAG_TYPE_FIELD_COUNT:
                 break;
             case TAG_TYPE_SEPARATOR:
-                if (mContainerDataType && mContainerDataType->HasMoreDataTypes())
+                if (mContainerDataType/* && mContainerDataType->HasMoreDataTypes()*/)
                 {
                     fprintf(mOutputFile, ",");
                 }
@@ -984,8 +987,6 @@ int CodeGenerator::ProcessTag(const uint8_t *buffer, size_t buffer_length)
 {
     Tag *tag = NULL;
 
-    LOGD("TAG: %s\n", buffer);
-
     if (!_strnicmp((const char*)buffer, "ForEachField", buffer_length))
     {
         tag = new Tag(TAG_TYPE_FOREACH_FIELD_BEGIN, buffer, buffer_length);
@@ -1057,8 +1058,11 @@ int CodeGenerator::Run(int argc, char **argv)
     }
     else
     {
-        Logging::OpenLogFile("log.txt");
-        LOGSETLEVEL(LOGGING_LEVEL_DEBUG, LOGGING_LEVEL_INFO);
+        if (argc >= 5)
+        {
+            Logging::OpenLogFile(argv[4]);
+            LOGSETLEVEL(LOGGING_LEVEL_DEBUG, LOGGING_LEVEL_INFO);
+        }
 
         /*mInputFile = fopen(argv[1], "rb");
         if (mInputFile == NULL)
@@ -1084,39 +1088,22 @@ int CodeGenerator::Run(int argc, char **argv)
             return 1;
         }
 
-        if (argc >= 5)
-        {
-            mLogFile = fopen(argv[4], "wb");
-            if (mLogFile == NULL)
-            {
-                LOGE("Unable to create file: %s\n", argv[3]);
-                Usage(argv[0]);
-                return 1;
-            }
-            else
-            {
-                mLogDest = mLogFile;
-            }
-        }
-
         LOGI("Configuration:\n");
         LOGI("  Input file    : %s\n", argv[1]);
         LOGI("  Template file : %s\n", argv[2]);
         LOGI("  Output file   : %s\n", argv[3]);
-
-        mRootDataType = DataTypeTester();
+        if (argc >= 5)
+        {
+            LOGI("  Log file      : %s\n", argv[4]);
+        }
 
         result = ParseJsonInputFile(argv[1]);
-/*
-        result = ParseCsvInputFile();
         if (result != 0)
         {
-            printf("ERROR: Unable to parse input file\n");
+            LOGE("Unable to parse JSON file\n");
             Usage(argv[0]);
             return 1;
         }
-*/
-        //result = ParseYamlInputFile();
 
         result = ParseTemplateInputFile();
         if (result != 0)

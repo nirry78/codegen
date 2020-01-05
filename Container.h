@@ -5,13 +5,14 @@
 #include <list>
 #include <nlohmann/json.hpp>
 
+#include "Formatter.h"
 #include "Logging.h"
 #include "MessageField.h"
 #include "Tag.h"
 
 using json = nlohmann::json;
 
-class Message
+class Container: public Formatter
 {
     private:
         std::string                         mName;
@@ -20,8 +21,8 @@ class Message
 
         void                    ParseParameters(json& object);
     public:
-                                Message(json& object);
-        virtual                 ~Message();
+                                Container(json& object);
+        virtual                 ~Container();
 
         bool                    ForeachFieldReset();
         bool                    ForeachFieldNext();

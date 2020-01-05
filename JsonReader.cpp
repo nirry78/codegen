@@ -4,15 +4,15 @@
 
 JsonReader::JsonReader()
 {
-    mMessageList.clear();
+    mContainerList.clear();
 }
 
 JsonReader::~JsonReader()
 {
-    mMessageList.clear();
+    mContainerList.clear();
 }
 
-void JsonReader::VerifyMessages(json& object)
+void JsonReader::VerifyContainer(json& object)
 {
     for (auto& [key, value] : object.items()) 
     {
@@ -20,12 +20,12 @@ void JsonReader::VerifyMessages(json& object)
         
         if (value.is_object())
         {
-            mMessageList.push_back(Message(value));
+            mContainerList.push_back(Container(value));
         }
     }
 }
 
-void JsonReader::VerifyParameters(Message& message, json& object)
+void JsonReader::VerifyParameters(Container& Container, json& object)
 {
 
 }
@@ -42,7 +42,7 @@ bool JsonReader::ReadFile(const char *filename)
     }
     catch(const std::exception& e)
     {
-        std::cerr << e.what() << '\n';
+        std::cerr << "Parse error: " << e.what() << '\n';
         result = false;
     }
 
@@ -52,10 +52,10 @@ bool JsonReader::ReadFile(const char *filename)
         {
             if (value.is_array())
             {
-                if (!key.compare("messages"))
+                if (!key.compare("containers"))
                 {
-                    std::cout << "messages found\n";
-                    VerifyMessages(value);
+                    std::cout << "Containers found\n";
+                    VerifyContainer(value);
                 }
                 else
                 {
@@ -88,23 +88,23 @@ bool JsonReader::SelectNamespace(const char *value)
 
 bool JsonReader::ForeachContainerReset()
 {
-    mMessageIterator = mMessageList.begin();
+    mContainerIterator = mContainerList.begin();
 
-    return (mMessageIterator != mMessageList.end());
+    return (mContainerIterator != mContainerList.end());
 }
 
 bool JsonReader::ForeachContainerNext()
 {
-    return ((++mMessageIterator) != mMessageList.end());
+    return ((++mContainerIterator) != mContainerList.end());
 }
 
 bool JsonReader::ForeachFieldReset()
 {
     bool result = false;
 
-    if (mMessageIterator != mMessageList.end())
+    if (mContainerIterator != mContainerList.end())
     {
-        result = (*mMessageIterator).ForeachFieldReset();
+        result = (*mContainerIterator).ForeachFieldReset();
     }   
 
     return result;
@@ -114,9 +114,9 @@ bool JsonReader::ForeachFieldNext()
 {
     bool result = false;
 
-    if (mMessageIterator != mMessageList.end())
+    if (mContainerIterator != mContainerList.end())
     {
-        result = (*mMessageIterator).ForeachFieldNext();
+        result = (*mContainerIterator).ForeachFieldNext();
     }   
 
     return result;
@@ -126,9 +126,9 @@ bool JsonReader::OutputContainer(FILE *outputFile, const char *name, Tag* tag)
 {
     bool result = false;
 
-    if (mMessageIterator != mMessageList.end())
+    if (mContainerIterator != mContainerList.end())
     {
-        result = (*mMessageIterator).Output(outputFile, name, tag);
+        result = (*mContainerIterator).Output(outputFile, name, tag);
     }
 
     return result;
@@ -138,9 +138,9 @@ bool JsonReader::OutputField(FILE *outputFile, const char *name, Tag* tag)
 {
     bool result = true;
 
-    if (mMessageIterator != mMessageList.end())
+    if (mContainerIterator != mContainerList.end())
     {
-        result = (*mMessageIterator).OutputField(outputFile, name, tag);
+        result = (*mContainerIterator).OutputField(outputFile, name, tag);
     }
 
     return result;

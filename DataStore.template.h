@@ -5,22 +5,27 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include "Platform.h"
 
-class DataStore
+@foreachcontainer
+
+class @container{name = 'name'}
 {
     private:
 @ForEachField
-        @Field{name='type'} m@Field{name='name', style='lower'};
+        @Field{name='type'} m@Field{name='name'}@Field{name='length'};
 @EndForEachField
 
     public:
-        DataStore();
-        ~DataStore();
+        @container{name = 'name'}();
+        ~@container{name = 'name'}();
 
         void        Dump(FILE *dest);
         uint32_t    Serialize(uint8_t *buffer, uint32_t bufferLength);
         uint32_t    Unserialize(uint8_t *buffer, uint32_t bufferLength);
 };
+
+@endforeachcontainer
 
 #endif
 

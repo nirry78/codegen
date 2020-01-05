@@ -30,7 +30,8 @@ typedef enum {
     TAG_FIELD_TYPE_NAME,
     TAG_FIELD_TYPE_ALIGNMENT,
     TAG_FIELD_TYPE_STYLE,
-    TAG_FIELD_TYPE_CONVERT
+    TAG_FIELD_TYPE_CONVERT,
+    TAG_FIELD_TYPE_LENGTH
 } TagFieldType;
 
 typedef enum {
@@ -54,6 +55,7 @@ class Tag
         TagStyle        mTagStyle;
         TagConvert      mTagConvert;
         std::string     mName;
+        std::string     mLength;
     public:
                         Tag(TagType tag_type, const uint8_t *buffer, size_t length);
                         ~Tag();

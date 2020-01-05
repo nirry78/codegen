@@ -1,6 +1,6 @@
-#include "Message.h"
+#include "Container.h"
 
-Message::Message(json& object)
+Container::Container(json& object)
 {
     for (auto& [key, value] : object.items()) 
     {
@@ -23,40 +23,51 @@ Message::Message(json& object)
         }
         else
         {
-            LOGE("Message has unregonized key: %s\n", key.c_str());
+            LOGE("Container has unregonized key: %s\n", key.c_str());
         }
     }
 
     ForeachFieldReset();
 }
 
-Message::~Message()
+Container::~Container()
 {
 
 }
 
-bool Message::ForeachFieldReset()
+bool Container::ForeachFieldReset()
 {
     mFieldIterator = mFieldList.begin();
 
     return (mFieldIterator != mFieldList.end());
 }
 
-bool Message::ForeachFieldNext()
+bool Container::ForeachFieldNext()
 {
     return ((++mFieldIterator) != mFieldList.end());
 }
 
-bool Message::Output(FILE *outputFile, const char *name, Tag* tag)
+bool Container::Output(FILE *outputFile, const char *name, Tag* tag)
 {
     bool result = true;
 
-    fprintf(outputFile, "%s", mName.c_str());
+    if (tag->GetTagStyle() == TAG_STYLE_LOWERCASE)
+    {
+        OutputLowerCase(outputFile, mName);
+    }
+    else if (tag->GetTagStyle() == TAG_STYLE_UPPERCASE)
+    {
+        OutputUpperCase(outputFile, mName);
+    }
+    else
+    {
+        fprintf(outputFile, "%s",  mName.c_str());
+    }
 
     return result;
 }
 
-bool Message::OutputField(FILE *outputFile, const char *name, Tag* tag)
+bool Container::OutputField(FILE *outputFile, const char *name, Tag* tag)
 {
     bool result = false;
 
@@ -68,7 +79,7 @@ bool Message::OutputField(FILE *outputFile, const char *name, Tag* tag)
     return result;
 }
 
-void Message::ParseParameters(json& object)
+void Container::ParseParameters(json& object)
 {
     for (auto& [key, value] : object.items()) 
     {
@@ -85,7 +96,7 @@ void Message::ParseParameters(json& object)
     }
 }
 
-bool Message::IsValid()
+bool Container::IsValid()
 {
     return true;
 }
