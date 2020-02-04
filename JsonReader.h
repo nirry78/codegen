@@ -27,9 +27,9 @@ class JsonReader
         virtual ~JsonReader();
         bool    ReadFile(const char *filename);
         bool    SelectNamespace(const char *value);
-        bool    ForeachContainerReset();
+        bool    ForeachContainerReset(Tag *tag);
         bool    ForeachContainerNext();
-        bool    ForeachFieldReset();
+        bool    ForeachFieldReset(Tag *tag);
         bool    ForeachFieldNext();
         bool    OutputContainer(FILE *outputFile, std::string& name, Tag* tag);
         bool    OutputField(FILE *outputFile, std::string& name, Tag* tag);

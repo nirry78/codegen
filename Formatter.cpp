@@ -11,9 +11,11 @@ Formatter::~Formatter()
     
 }
 
-void Formatter::OutputLowerCase(FILE *f, std::string& str)
+int Formatter::OutputLowerCase(FILE *f, std::string& str)
 {
+    int count = 0;
     bool first = true;
+
     for ( std::string::iterator it = str.begin(); it != str.end(); ++it)
     {
         if (first)
@@ -23,15 +25,21 @@ void Formatter::OutputLowerCase(FILE *f, std::string& str)
         else if (std::isupper(*it))
         {
             fputc('_', f);    
+            count++;
         }
 
         fputc(std::tolower(*it), f);
+        count++;
     }
+
+    return count;
 }
 
-void Formatter::OutputUpperCase(FILE *f, std::string& str)
+int Formatter::OutputUpperCase(FILE *f, std::string& str)
 {
+    int count = 0;
     bool first = true;
+
     for ( std::string::iterator it = str.begin(); it != str.end(); ++it)
     {
         if (first)
@@ -41,8 +49,12 @@ void Formatter::OutputUpperCase(FILE *f, std::string& str)
         else if (std::isupper(*it))
         {
             fputc('_', f);    
+            count++;
         }
         
         fputc(std::toupper(*it), f);
+        count++;
     }
+
+    return count;
 }

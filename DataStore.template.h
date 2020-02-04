@@ -8,6 +8,10 @@
 #include "Platform.h"
 
 @foreachcontainer
+#define @container{name = 'name', style = 'upper_case'}_IDENTIFIER
+@endforeachcontainer
+
+@foreachcontainer
 
 class @container{name = 'name'}
 {

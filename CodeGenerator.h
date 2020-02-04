@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "Object.h"
 #include "Tag.h"
 //#include "DataType.h"
 #include "JsonReader.h"
@@ -39,7 +40,7 @@ class Record
 };
 */
 
-class CodeGenerator
+class CodeGenerator: public Object
 {
     private:
         FILE            *mInputFile;

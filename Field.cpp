@@ -203,7 +203,7 @@ bool Field::Output(FILE *outputFile, std::string& name, Tag* tag)
     }
     else
     {
-        LOGD("<Field::Output> Unsupported field: %s\n", name);
+        LOGD("<Field::Output> Unsupported field: %s\n", name.c_str());
     }
     
 

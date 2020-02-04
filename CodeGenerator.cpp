@@ -87,7 +87,7 @@ static const uint8_t templateStateTranstionTable[43][19] = {
     {   0, 31, 31, 32, 34, 31, 31, 36, 31,  31, 31, 31, 31, 31,   31, 31, 31, 31, 31 }, /* 32 - Params ' section LF */
     {   0, 31, 31, 34, 33, 31, 31, 36, 31,  31, 31, 31, 31, 31,   31, 31, 31, 31, 31 }, /* 33 - Params ' section CR */
     {   0, 31, 31, 32, 33, 31, 31, 36, 31,  31, 31, 31, 31, 31,   31, 31, 31, 31, 31 }, /* 34 - Params ' section LF<CR or CR>LF */
-    {   0, 36, 36, 21, 19, 36, 22, 22, 36,  35, 22, 22, 22, 22,   35, 35, 22, 35, 22 }, /* 35 - Params value continue */
+    {   0, 36, 36, 21, 19, 36, 22, 22, 36,  35, 22, 22, 22, 22,   35, 35, 22, 35, 42 }, /* 35 - Params value continue */
     {   0, 40, 37, 13, 14, 37, 40, 40, 12,  40, 40, 40, 40, 40,   16, 41, 41, 41, 42 }, /* 36 - Params value end */
     {   0, 40, 37, 38, 39, 31, 40, 40, 12,  40, 40, 40, 40, 40,   16, 41, 41, 41, 42 }, /* 37 - Params value end spacing */
     {   0, 40, 37, 38, 40, 37, 40, 40, 12,  40, 40, 40, 40, 40,   16, 41, 41, 41, 42 }, /* 38 - Params value end LF */
@@ -285,30 +285,32 @@ int CodeGenerator::AddTag()
 
 int CodeGenerator::FieldName(const uint8_t *buffer, size_t buffer_length)
 {
+    std::string compareString((const char*)buffer, buffer_length);
     int result = 0;
 
-    if (!_strnicmp((const char*)buffer, "Name", buffer_length))
+    if (StringCompare(compareString, "Name"))
     {
         mNextFieldType = TAG_FIELD_TYPE_NAME;
     }
-    else if (!_strnicmp((const char*)buffer, "Alignment", buffer_length))
+    else if (StringCompare(compareString, "Width"))
     {
-        mNextFieldType = TAG_FIELD_TYPE_ALIGNMENT;
+        mNextFieldType = TAG_FIELD_TYPE_WIDTH;
     }
-    else if (!_strnicmp((const char*)buffer, "Style", buffer_length))
+    else if (StringCompare(compareString, "Style"))
     {
         mNextFieldType = TAG_FIELD_TYPE_STYLE;
     }
-    else if (!_strnicmp((const char*)buffer, "Convert", buffer_length))
+    else if (StringCompare(compareString, "Convert"))
     {
         mNextFieldType = TAG_FIELD_TYPE_CONVERT;
     }
-    else if (!_strnicmp((const char*)buffer, "Length", buffer_length))
+    else if (StringCompare(compareString, "Length"))
     {
         mNextFieldType = TAG_FIELD_TYPE_LENGTH;
     }
     else
     {
+        LOGD("<CodeGenerator::FieldName> Not supported: %s\n", compareString.c_str());
         result = -1;
     }
 
@@ -504,7 +506,7 @@ int CodeGenerator::GenerateOutputJson()
                 }
                 else
                 {
-                    if (mJsonReader.ForeachContainerReset())
+                    if (mJsonReader.ForeachContainerReset(tag))
                     {
                         foreachContainerTag = tag;
                     }
@@ -528,7 +530,7 @@ int CodeGenerator::GenerateOutputJson()
                 break;
             case TAG_TYPE_FOREACH_FIELD_BEGIN:
                 LOGD("[OUT] Foreach field begin (TAG: %c)\n", foreachContainerTag != NULL ? 'y' : 'n');
-                if (mJsonReader.ForeachFieldReset())
+                if (mJsonReader.ForeachFieldReset(tag))
                 {
                     foreachFieldTag = tag;
                 }
@@ -550,7 +552,7 @@ int CodeGenerator::GenerateOutputJson()
                 LOGD("[OUT] Foreach field end (Continue: %c)\n", foreachFieldTag != NULL ? 'y' : 'n');
                 break;
             case TAG_TYPE_FIELD:
-                LOGD("[OUT] Field (Name: %s)\n", tag->GetName());
+                LOGD("[OUT] Field (Name: %s)\n", tag->GetName().c_str());
                 if (!mJsonReader.OutputField(mOutputFile, tag->GetName(), tag))
                 {
                     LOGE("Not inside field loop\n");
@@ -558,7 +560,7 @@ int CodeGenerator::GenerateOutputJson()
                 }       
                 break;
             case TAG_TYPE_CONTAINER:
-                LOGD("[OUT] Container (Name: %s)\n", tag->GetName());
+                LOGD("[OUT] Container (Name: %s)\n", tag->GetName().c_str());
                 if (!mJsonReader.OutputContainer(mOutputFile, tag->GetName(), tag))
                 {
                     LOGE("Not inside container loop\n");
@@ -960,7 +962,7 @@ int CodeGenerator::ParseTemplateBlock(size_t length)
         case 36: /* 36 - Params value end */
             if (mParseOutputOffset > 0)
             {
-                mParseOutput[mParseOutputOffset++] = 0;
+                mParseOutput[mParseOutputOffset] = 0;
                 FieldValue(mParseOutput, mParseOutputOffset);
                 mParseOutputOffset = 0;
             }
@@ -972,6 +974,8 @@ int CodeGenerator::ParseTemplateBlock(size_t length)
             break;
         }
     }
+
+    LOG_STATE_TRANSITION(mParseState, '\n');
 
     return AddTag();
 }

@@ -68,7 +68,7 @@ bool JsonReader::ReadFile(const char *filename)
             }
         }
 
-        ForeachContainerReset();
+        ForeachContainerReset(NULL);
     }
     catch(const std::exception& e)
     {
@@ -86,7 +86,7 @@ bool JsonReader::SelectNamespace(const char *value)
     return result;
 }
 
-bool JsonReader::ForeachContainerReset()
+bool JsonReader::ForeachContainerReset(Tag *tag)
 {
     mContainerIterator = mContainerList.begin();
 
@@ -98,7 +98,7 @@ bool JsonReader::ForeachContainerNext()
     return ((++mContainerIterator) != mContainerList.end());
 }
 
-bool JsonReader::ForeachFieldReset()
+bool JsonReader::ForeachFieldReset(Tag *tag)
 {
     bool result = false;
 

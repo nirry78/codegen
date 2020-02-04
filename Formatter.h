@@ -12,8 +12,8 @@ class Formatter: public Object
                         Formatter();
         virtual         ~Formatter();
 
-        void            OutputLowerCase(FILE *f, std::string& str);
-        void            OutputUpperCase(FILE *f, std::string& str);
+        int             OutputLowerCase(FILE *f, std::string& str);
+        int             OutputUpperCase(FILE *f, std::string& str);
 };
 
 #endif /* _FORMATTER_H */

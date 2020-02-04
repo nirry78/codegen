@@ -51,6 +51,19 @@ bool Container::Output(FILE *outputFile, std::string& name, Tag* tag)
 {
     bool result = true;
 
+    if (tag)
+    {
+        tag->Output(outputFile, mName);
+    }
+    else
+    {
+        fprintf(outputFile, "%s",  mName.c_str());
+    }
+
+    return result;
+    
+/*    bool result = true;
+
     if (tag->GetTagStyle() == TAG_STYLE_LOWER_CASE)
     {
         OutputLowerCase(outputFile, mName);
@@ -64,7 +77,7 @@ bool Container::Output(FILE *outputFile, std::string& name, Tag* tag)
         fprintf(outputFile, "%s",  mName.c_str());
     }
 
-    return result;
+    return result;*/
 }
 
 bool Container::OutputField(FILE *outputFile, std::string& name, Tag* tag)

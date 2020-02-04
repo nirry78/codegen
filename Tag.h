@@ -8,6 +8,7 @@
 #include <string.h>
 #include <string>
 #include "Object.h"
+#include "Formatter.h"
 #include "Logging.h"
 #include "Platform.h"
 
@@ -29,7 +30,7 @@ typedef enum {
 typedef enum {
     TAG_FIELD_TYPE_NONE,
     TAG_FIELD_TYPE_NAME,
-    TAG_FIELD_TYPE_ALIGNMENT,
+    TAG_FIELD_TYPE_WIDTH,
     TAG_FIELD_TYPE_STYLE,
     TAG_FIELD_TYPE_CONVERT,
     TAG_FIELD_TYPE_LENGTH
@@ -48,7 +49,7 @@ typedef enum {
     TAG_CONVERT_C,
 } TagConvert;
 
-class Tag: public Object
+class Tag: public Formatter
 {
     private:
         class Tag       *mNextTag;
@@ -57,6 +58,7 @@ class Tag: public Object
         TagType         mTagType;
         TagStyle        mTagStyle;
         TagConvert      mTagConvert;
+        uint32_t        mWidth;
         std::string     mName;
         std::string     mLength;
     public:
@@ -70,6 +72,7 @@ class Tag: public Object
         bool            IsNameEqual(const char *reference);
         bool            IsValid();
         int             Output(FILE *output);
+        int             Output(FILE *output, std::string& str);
         //int             OutputField(FILE *output, Record *record, uint32_t index);
         int             SetFieldValue(TagFieldType fieldType, const uint8_t *buffer, size_t length);
         void            SetNextTag(Tag *tag) { mNextTag = tag;}
