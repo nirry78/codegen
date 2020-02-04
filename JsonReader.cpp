@@ -122,7 +122,7 @@ bool JsonReader::ForeachFieldNext()
     return result;
 }
 
-bool JsonReader::OutputContainer(FILE *outputFile, const char *name, Tag* tag)
+bool JsonReader::OutputContainer(FILE *outputFile, std::string& name, Tag* tag)
 {
     bool result = false;
 
@@ -134,7 +134,7 @@ bool JsonReader::OutputContainer(FILE *outputFile, const char *name, Tag* tag)
     return result;
 }
 
-bool JsonReader::OutputField(FILE *outputFile, const char *name, Tag* tag)
+bool JsonReader::OutputField(FILE *outputFile, std::string& name, Tag* tag)
 {
     bool result = true;
 

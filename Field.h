@@ -1,5 +1,5 @@
-#ifndef _MESSAGE_FIELD_H
-#define _MESSAGE_FIELD_H
+#ifndef _FIELD_H
+#define _FIELD_H
 
 #include <stdint.h>
 #include <string>
@@ -39,7 +39,7 @@ typedef struct
     } d;    
 } DataTypeVariant;
 
-class MessageField: public Formatter
+class Field: public Formatter
 {
     private:
         std::string         mName;
@@ -55,9 +55,9 @@ class MessageField: public Formatter
 
         void                DecodeFieldType(json& object);
     public:
-                            MessageField(json& object);
-        virtual             ~MessageField();   
-        bool                Output(FILE *outputFile, const char *name, Tag* tag);
+                            Field(json& object);
+        virtual             ~Field();   
+        bool                Output(FILE *outputFile, std::string& name, Tag* tag);
 };
 
-#endif /* _MESSAGE_FIELD_H */
+#endif /* _FIELD_H */

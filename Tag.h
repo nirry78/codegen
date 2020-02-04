@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <string>
+#include "Object.h"
 #include "Logging.h"
 #include "Platform.h"
 
@@ -36,8 +37,10 @@ typedef enum {
 
 typedef enum {
     TAG_STYLE_STANDARD,
-    TAG_STYLE_UPPERCASE,
-    TAG_STYLE_LOWERCASE,
+    TAG_STYLE_UPPER_CASE,
+    TAG_STYLE_LOWER_CASE,
+    TAG_STYLE_CAMEL_CASE,
+    TAG_STYLE_LOWER_CAMEL_CASE,
 } TagStyle;
 
 typedef enum {
@@ -45,7 +48,7 @@ typedef enum {
     TAG_CONVERT_C,
 } TagConvert;
 
-class Tag
+class Tag: public Object
 {
     private:
         class Tag       *mNextTag;
@@ -60,7 +63,7 @@ class Tag
                         Tag(TagType tag_type, const uint8_t *buffer, size_t length);
                         ~Tag();
         void            Dump(FILE *output);
-        const char*     GetName() { return mName.c_str(); }
+        std::string&    GetName() { return mName; }
         Tag*            GetNextTag() { return mNextTag; }
         TagType         GetTagType() { return mTagType; }
         TagStyle        GetTagStyle() { return mTagStyle; }

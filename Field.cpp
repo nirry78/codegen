@@ -1,6 +1,6 @@
-#include "MessageField.h"
+#include "Field.h"
 
-MessageField::MessageField(json& object):
+Field::Field(json& object):
     mLength(0), mType(MFT_UNKNOWN), mSize(0) 
 {
     mMinValue = { .mType = MFT_UNKNOWN };
@@ -15,7 +15,7 @@ MessageField::MessageField(json& object):
             {
                 mName = value.get<std::string>();            
 
-                LOGD("<MessageField::MessageField> Name: %s\n", mName.c_str());
+                LOGD("<Field::Field> Name: %s\n", mName.c_str());
             }
             else
             {
@@ -43,27 +43,27 @@ MessageField::MessageField(json& object):
             {
                 mLength = value.get<uint32_t>();
 
-                LOGD("<MessageField::MessageField> Length: %u\n", mLength);
+                LOGD("<Field::Field> Length: %u\n", mLength);
             }
             else
             {
-                LOGD("<MessageField::MessageField> Length found with unexpected type\n");
+                LOGD("<Field::Field> Length found with unexpected type\n");
             }            
         }
         else
         {
-            LOGD("<MessageField::MessageField> Unknown entry: %s\n", key.c_str());
+            LOGD("<Field::Field> Unknown entry: %s\n", key.c_str());
         }
         
     }
 }
 
-MessageField::~MessageField()
+Field::~Field()
 {
 
 }
 
-void MessageField::DecodeFieldType(json& object)
+void Field::DecodeFieldType(json& object)
 {
     if (object.is_string())
     {
@@ -116,17 +116,17 @@ void MessageField::DecodeFieldType(json& object)
     }
 }
 
-bool MessageField::Output(FILE *outputFile, const char *name, Tag* tag)
+bool Field::Output(FILE *outputFile, std::string& name, Tag* tag)
 {
-    if (!strcasecmp(name, "name"))
+    if (StringCompare(name, "name"))
     {
-        LOGD("<MessageField::Output> Name\n");
+        LOGD("<Field::Output> Name\n");
 
-        if (tag->GetTagStyle() == TAG_STYLE_LOWERCASE)
+        if (tag->GetTagStyle() == TAG_STYLE_LOWER_CASE)
         {
             OutputLowerCase(outputFile, mName);
         }
-        else if (tag->GetTagStyle() == TAG_STYLE_UPPERCASE)
+        else if (tag->GetTagStyle() == TAG_STYLE_UPPER_CASE)
         {
             OutputUpperCase(outputFile, mName);
         }
@@ -135,9 +135,9 @@ bool MessageField::Output(FILE *outputFile, const char *name, Tag* tag)
             fprintf(outputFile, "%s",  mName.c_str());
         }
     }
-    else if (!strcasecmp(name, "type"))
+    else if (StringCompare(name, "type"))
     {
-        LOGD("<MessageField::Output> Type\n");
+        LOGD("<Field::Output> Type\n");
 
         switch (mType)
         {
@@ -192,9 +192,9 @@ bool MessageField::Output(FILE *outputFile, const char *name, Tag* tag)
             }
         }
     }
-    else if (!strcasecmp(name, "length"))
+    else if (StringCompare(name, "length"))
     {
-        LOGD("<MessageField::Output> Length: %u\n", mLength);
+        LOGD("<Field::Output> Length: %u\n", mLength);
 
         if (mLength > 0)
         {
@@ -203,7 +203,7 @@ bool MessageField::Output(FILE *outputFile, const char *name, Tag* tag)
     }
     else
     {
-        LOGD("<MessageField::Output> Unsupported field: %s\n", name);
+        LOGD("<Field::Output> Unsupported field: %s\n", name);
     }
     
 

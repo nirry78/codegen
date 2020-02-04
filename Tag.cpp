@@ -50,8 +50,8 @@ void Tag::Dump(FILE *output)
         case TAG_TYPE_FIELD:
             LOGD("TAG[FIELD] Name:%s, Style: %s\n", 
                  mName.size() > 0 ? mName.c_str() : "N/A", 
-                 mTagStyle == TAG_STYLE_UPPERCASE ? "uppercase" : 
-                 mTagStyle == TAG_STYLE_LOWERCASE ? "lowercase" : 
+                 mTagStyle == TAG_STYLE_UPPER_CASE ? "uppercase" : 
+                 mTagStyle == TAG_STYLE_LOWER_CASE ? "lowercase" : 
                  "default");
             break;
         case TAG_TYPE_FIELD_COUNT:
@@ -110,13 +110,13 @@ int Tag::SetFieldValue(TagFieldType fieldType, const uint8_t *buffer, size_t len
         {
             if (!_strnicmp("upper", (char*)buffer, length) || !_strnicmp("uppercase", (char*)buffer, length))
             {
-                mTagStyle = TAG_STYLE_UPPERCASE;
+                mTagStyle = TAG_STYLE_UPPER_CASE;
 
                 LOGD("<Tag::SetFieldValue> Style: Uppercase\n");
             }
             else if (!_strnicmp("lower", (char*)buffer, length) || !_strnicmp("lowercase", (char*)buffer, length))
             {
-                mTagStyle = TAG_STYLE_LOWERCASE;
+                mTagStyle = TAG_STYLE_LOWER_CASE;
 
                 LOGD("<Tag::SetFieldValue> Style: Lowercase\n");
             }

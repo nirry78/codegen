@@ -2,8 +2,9 @@
 #define _FORMATTER_H
 
 #include <string>
+#include "Object.h"
 
-class Formatter
+class Formatter: public Object
 {
     private:
 

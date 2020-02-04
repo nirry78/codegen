@@ -10,6 +10,7 @@
 //#include "DataType.h"
 #include "JsonReader.h"
 
+/*
 class Field
 {
     private:
@@ -36,6 +37,7 @@ class Record
         int             Output(FILE *output, size_t index, TagStyle style, TagConvert convert);
         void            SetNextRecord(Record *record) { mNextRecord = record; }
 };
+*/
 
 class CodeGenerator
 {
@@ -53,9 +55,9 @@ class CodeGenerator
         size_t          mParseCharCount;
         size_t          mParseLineCount;
         bool            mParseTagOnly;
-        Record          *mCurrentRecord;
+        /*Record          *mCurrentRecord;
         Record          *mRecordListHead;
-        Record          *mRecordListTail;
+        Record          *mRecordListTail;*/
         char**          mRecordNames;
         uint32_t        mNumberOfFields;
         Tag             *mTagListHead;

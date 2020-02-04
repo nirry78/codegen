@@ -7,7 +7,7 @@
 
 #include "Formatter.h"
 #include "Logging.h"
-#include "MessageField.h"
+#include "Field.h"
 #include "Tag.h"
 
 using json = nlohmann::json;
@@ -15,9 +15,9 @@ using json = nlohmann::json;
 class Container: public Formatter
 {
     private:
-        std::string                         mName;
-        std::list<MessageField>             mFieldList;
-        std::list<MessageField>::iterator   mFieldIterator;
+        std::string                  mName;
+        std::list<Field>             mFieldList;
+        std::list<Field>::iterator   mFieldIterator;
 
         void                    ParseParameters(json& object);
     public:
@@ -27,8 +27,8 @@ class Container: public Formatter
         bool                    ForeachFieldReset();
         bool                    ForeachFieldNext();
         bool                    IsValid();
-        bool                    Output(FILE *outputFile, const char *name, Tag* tag);
-        bool                    OutputField(FILE *outputFile, const char *name, Tag* tag);
+        bool                    Output(FILE *outputFile, std::string& name, Tag* tag);
+        bool                    OutputField(FILE *outputFile, std::string& name, Tag* tag);
         void                    SetName(std::string& name) { mName = name; }
 };
 

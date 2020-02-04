@@ -47,15 +47,15 @@ bool Container::ForeachFieldNext()
     return ((++mFieldIterator) != mFieldList.end());
 }
 
-bool Container::Output(FILE *outputFile, const char *name, Tag* tag)
+bool Container::Output(FILE *outputFile, std::string& name, Tag* tag)
 {
     bool result = true;
 
-    if (tag->GetTagStyle() == TAG_STYLE_LOWERCASE)
+    if (tag->GetTagStyle() == TAG_STYLE_LOWER_CASE)
     {
         OutputLowerCase(outputFile, mName);
     }
-    else if (tag->GetTagStyle() == TAG_STYLE_UPPERCASE)
+    else if (tag->GetTagStyle() == TAG_STYLE_UPPER_CASE)
     {
         OutputUpperCase(outputFile, mName);
     }
@@ -67,7 +67,7 @@ bool Container::Output(FILE *outputFile, const char *name, Tag* tag)
     return result;
 }
 
-bool Container::OutputField(FILE *outputFile, const char *name, Tag* tag)
+bool Container::OutputField(FILE *outputFile, std::string& name, Tag* tag)
 {
     bool result = false;
 
@@ -87,7 +87,7 @@ void Container::ParseParameters(json& object)
         
         if (value.is_object())
         {
-            mFieldList.push_back(MessageField(value));
+            mFieldList.push_back(Field(value));
         }
         else
         {

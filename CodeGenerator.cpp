@@ -96,7 +96,7 @@ static const uint8_t templateStateTranstionTable[43][19] = {
     {   0, 41, 41, 41, 41, 41, 41, 41, 41,  41, 41, 41, 41, 41,   41, 41, 41, 41, 42 }, /* 41 - Params value error */
     {   0,  0,  0,  8,  9,  0,  0,  0,  0,   0,  0,  0,  0,  1,    0,  0,  0,  0,  0 }, /* 42 - Params end */
 };
-
+/*
 Field::Field(const char *value, size_t length)
 {
     mStringValue = new char[length];
@@ -162,7 +162,8 @@ int Record::Output(FILE *output, size_t index, TagStyle style, TagConvert conver
         {
             case TAG_STYLE_STANDARD:
                 break;
-            case TAG_STYLE_UPPERCASE:
+            case TAG_STYLE_UPPER_CASE:
+            {
                 while (*c != 0)
                 {
                     if (*c >= 'a' && *c <= 'z')
@@ -172,7 +173,9 @@ int Record::Output(FILE *output, size_t index, TagStyle style, TagConvert conver
                     c++;
                 }
                 break;
-            case TAG_STYLE_LOWERCASE:
+            }
+            case TAG_STYLE_LOWER_CASE:
+            {
                 while (*c != 0)
                 {
                     if (*c >= 'A' && *c <= 'Z')
@@ -182,6 +185,15 @@ int Record::Output(FILE *output, size_t index, TagStyle style, TagConvert conver
                     c++;
                 }
                 break;
+            }
+            case TAG_STYLE_CAMEL_CASE:
+            {
+                break;
+            }
+            case TAG_STYLE_LOWER_CAMEL_CASE:
+            {
+                break;
+            }
         }
 
         switch (convert)
@@ -210,11 +222,12 @@ int Record::Output(FILE *output, size_t index, TagStyle style, TagConvert conver
 
     return result;
 }
+*/
 
 CodeGenerator::CodeGenerator():
     mInputFile(NULL), mOutputFile(NULL), mTemplateFile(NULL), mLogFile(NULL), mLogDest(stdout), mParseState(0),
-    mParseOutputOffset(0), mParseFieldCount(0), mParseCharCount(0), mParseLineCount(0), mCurrentRecord(NULL),
-    mRecordListHead(NULL), mRecordListTail(NULL), mRecordNames(NULL), mNumberOfFields(0), mTagListHead(NULL),
+    mParseOutputOffset(0), mParseFieldCount(0), mParseCharCount(0), mParseLineCount(0), /*mCurrentRecord(NULL),
+    mRecordListHead(NULL), mRecordListTail(NULL), */mRecordNames(NULL), mNumberOfFields(0), mTagListHead(NULL),
     mTagListTail(NULL), mNextFieldType(TAG_FIELD_TYPE_NONE), mRootDataType(NULL)
 {
 
@@ -538,7 +551,7 @@ int CodeGenerator::GenerateOutputJson()
                 break;
             case TAG_TYPE_FIELD:
                 LOGD("[OUT] Field (Name: %s)\n", tag->GetName());
-                if (!mJsonReader.OutputField(mOutputFile, (const char*)tag->GetName(), tag))
+                if (!mJsonReader.OutputField(mOutputFile, tag->GetName(), tag))
                 {
                     LOGE("Not inside field loop\n");
                     result = -1;
@@ -546,7 +559,7 @@ int CodeGenerator::GenerateOutputJson()
                 break;
             case TAG_TYPE_CONTAINER:
                 LOGD("[OUT] Container (Name: %s)\n", tag->GetName());
-                if (!mJsonReader.OutputContainer(mOutputFile, (const char*)tag->GetName(), tag))
+                if (!mJsonReader.OutputContainer(mOutputFile, tag->GetName(), tag))
                 {
                     LOGE("Not inside container loop\n");
                     result = -1;
@@ -572,6 +585,7 @@ int CodeGenerator::GenerateOutputJson()
 
 int CodeGenerator::ParseCsvBlock(const char delimiter, size_t length)
 {
+#if 0
     int result = 0;
     size_t index;
 
@@ -687,6 +701,8 @@ int CodeGenerator::ParseCsvBlock(const char delimiter, size_t length)
     }
 
     return result;
+#endif
+    return 0;    
 }
 
 int CodeGenerator::ParseCsvInputFile()
