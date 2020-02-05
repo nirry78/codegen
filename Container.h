@@ -27,8 +27,8 @@ class Container: public Formatter
         bool                    ForeachFieldReset();
         bool                    ForeachFieldNext();
         bool                    IsValid();
-        bool                    Output(FILE *outputFile, std::string& name, Tag* tag);
-        bool                    OutputField(FILE *outputFile, std::string& name, Tag* tag);
+        void                    Output(Document* document, std::string& name, Tag* tag);
+        void                    OutputField(Document* document, std::string& name, Tag* tag);
         void                    SetName(std::string& name) { mName = name; }
 };
 

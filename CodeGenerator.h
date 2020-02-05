@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "Object.h"
+#include "Document.h"
 #include "Tag.h"
 //#include "DataType.h"
 #include "JsonReader.h"
@@ -44,7 +45,7 @@ class CodeGenerator: public Object
 {
     private:
         FILE            *mInputFile;
-        FILE            *mOutputFile;
+        Document        *mOutputDocument;
         FILE            *mTemplateFile;
         FILE            *mLogFile;
         FILE            *mLogDest;

@@ -31,8 +31,8 @@ class JsonReader
         bool    ForeachContainerNext();
         bool    ForeachFieldReset(Tag *tag);
         bool    ForeachFieldNext();
-        bool    OutputContainer(FILE *outputFile, std::string& name, Tag* tag);
-        bool    OutputField(FILE *outputFile, std::string& name, Tag* tag);
+        void    OutputContainer(Document* document, std::string& name, Tag* tag);
+        void    OutputField(Document* document, std::string& name, Tag* tag);
 };
 
 #endif /* _JSON_READER_H */

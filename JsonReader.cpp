@@ -122,27 +122,19 @@ bool JsonReader::ForeachFieldNext()
     return result;
 }
 
-bool JsonReader::OutputContainer(FILE *outputFile, std::string& name, Tag* tag)
+void JsonReader::OutputContainer(Document* document, std::string& name, Tag* tag)
 {
-    bool result = false;
-
     if (mContainerIterator != mContainerList.end())
     {
-        result = (*mContainerIterator).Output(outputFile, name, tag);
+        (*mContainerIterator).Output(document, name, tag);
     }
-
-    return result;
 }
 
-bool JsonReader::OutputField(FILE *outputFile, std::string& name, Tag* tag)
+void JsonReader::OutputField(Document* document, std::string& name, Tag* tag)
 {
-    bool result = true;
-
     if (mContainerIterator != mContainerList.end())
     {
-        result = (*mContainerIterator).OutputField(outputFile, name, tag);
+        (*mContainerIterator).OutputField(document, name, tag);
     }
-
-    return result;
 }
 

@@ -47,49 +47,24 @@ bool Container::ForeachFieldNext()
     return ((++mFieldIterator) != mFieldList.end());
 }
 
-bool Container::Output(FILE *outputFile, std::string& name, Tag* tag)
+void Container::Output(Document* document, std::string& name, Tag* tag)
 {
-    bool result = true;
-
     if (tag)
     {
-        tag->Output(outputFile, mName);
+        tag->Output(document, mName);
     }
     else
     {
-        fprintf(outputFile, "%s",  mName.c_str());
+        document->Output(mName);
     }
-
-    return result;
-    
-/*    bool result = true;
-
-    if (tag->GetTagStyle() == TAG_STYLE_LOWER_CASE)
-    {
-        OutputLowerCase(outputFile, mName);
-    }
-    else if (tag->GetTagStyle() == TAG_STYLE_UPPER_CASE)
-    {
-        OutputUpperCase(outputFile, mName);
-    }
-    else
-    {
-        fprintf(outputFile, "%s",  mName.c_str());
-    }
-
-    return result;*/
 }
 
-bool Container::OutputField(FILE *outputFile, std::string& name, Tag* tag)
+void Container::OutputField(Document* document, std::string& name, Tag* tag)
 {
-    bool result = false;
-
     if (mFieldIterator != mFieldList.end())
     {
-        result = mFieldIterator->Output(outputFile, name, tag);
+        mFieldIterator->Output(document, name, tag);
     }
-
-    return result;
 }
 
 void Container::ParseParameters(json& object)

@@ -57,7 +57,7 @@ class Field: public Formatter
     public:
                             Field(json& object);
         virtual             ~Field();   
-        bool                Output(FILE *outputFile, std::string& name, Tag* tag);
+        bool                Output(Document* document, std::string& name, Tag* tag);
 };
 
 #endif /* _FIELD_H */

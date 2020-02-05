@@ -28,38 +28,38 @@ void Tag::Dump(FILE *output)
     switch (mTagType)
     {
         case TAG_TYPE_DATA:
-            LOGD("<tag::dump> DATA [len:%u]\n", mBufferLength);
+            LOGD("<Tag::Dump> DATA [len:%u]\n", mBufferLength);
             break;
         case TAG_TYPE_CONTAINER:
-            LOGD("<tag::dump> CONTAINER\n");
+            LOGD("<Tag::Dump> CONTAINER\n");
             break;
         case TAG_TYPE_FOREACH_FIELD_BEGIN:
-            LOGD("<tag::dump> FOREACH_FIELD_BEGIN\n");
+            LOGD("<Tag::Dump> FOREACH_FIELD_BEGIN\n");
             break;
         case TAG_TYPE_FOREACH_FIELD_END:
-            LOGD("<tag::dump> FOREACH_FIELD_END\n");
+            LOGD("<Tag::Dump> FOREACH_FIELD_END\n");
             break;
         case TAG_TYPE_FOREACH_NAMESPACE_BEGIN:
-            LOGD("<tag::dump> FOREACH_NAMESPACE_BEGIN\n");
+            LOGD("<Tag::Dump> FOREACH_NAMESPACE_BEGIN\n");
             break;
         case TAG_TYPE_FOREACH_NAMESPACE_END:
-            LOGD("<tag::dump> FOREACH_NAMESPACE_END\n");
+            LOGD("<Tag::Dump> FOREACH_NAMESPACE_END\n");
             break;
         case TAG_TYPE_FOREACH_CONTAINER_BEGIN:
-            LOGD("<tag::dump> FOREACH_CONTAINER_BEGIN\n");
+            LOGD("<Tag::Dump> FOREACH_CONTAINER_BEGIN\n");
             break;
         case TAG_TYPE_FOREACH_CONTAINER_END:
-            LOGD("<tag::dump> FOREACH_CONTAINER_END\n");
+            LOGD("<Tag::Dump> FOREACH_CONTAINER_END\n");
             break;
         case TAG_TYPE_FIELD:
-            LOGD("<tag::dump> FIELD [Name:%s, Style: %s]\n", 
+            LOGD("<Tag::Dump> FIELD [Name:%s, Style: %s]\n", 
                  mName.size() > 0 ? mName.c_str() : "N/A", 
                  mTagStyle == TAG_STYLE_UPPER_CASE ? "uppercase" : 
                  mTagStyle == TAG_STYLE_LOWER_CASE ? "lowercase" : 
                  "default");
             break;
         case TAG_TYPE_FIELD_COUNT:
-            LOGD("<tag::dump> FIELD_COUNT\n");
+            LOGD("<Tag::Dump> FIELD_COUNT\n");
             break;
         default:
             LOGD("TAG[%u]\n", mTagType);
@@ -93,40 +93,41 @@ bool Tag::IsValid()
     return result;
 }
 
-int Tag::Output(FILE *output)
+void Tag::Output(Document *document)
 {
-    return fwrite(mBuffer, 1, mBufferLength, output) == mBufferLength ? 0 : -1;
+    document->OutputBuffer((const char*)mBuffer, mBufferLength);
 }
 
-int Tag::Output(FILE *output, std::string& str)
+void Tag::Output(Document *document, std::string& str)
 {
-    int count;
-
     switch (mTagStyle)
     {
-        case TAG_STYLE_UPPER_CASE:
+        case TAG_STYLE_CAMEL_CASE:
         {
-            count = OutputUpperCase(output, str);
+            document->OutputCamelCase(str, mWidth);
+            break;
+        }
+        case TAG_STYLE_LOWER_CAMEL_CASE:
+        {
+            document->OutputLowerCamelCase(str, mWidth);
             break;
         }
         case TAG_STYLE_LOWER_CASE:
         {
-            count = OutputLowerCase(output, str);
+            document->OutputLowerCase(str, mWidth);
+            break;
+        }
+        case TAG_STYLE_UPPER_CASE:
+        {
+            document->OutputUpperCase(str, mWidth);
             break;
         }
         default:
         {
-            count = fprintf(output, "%s", str.c_str());
+            document->Output(str, mWidth);
             break;
         }
     }
-
-    for (; count < mWidth; count++)
-    {
-        fputc(' ', output);
-    }
-
-    return 0;
 }
 
 int Tag::SetFieldValue(TagFieldType fieldType, const uint8_t *buffer, size_t length)

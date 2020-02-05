@@ -116,24 +116,13 @@ void Field::DecodeFieldType(json& object)
     }
 }
 
-bool Field::Output(FILE *outputFile, std::string& name, Tag* tag)
+bool Field::Output(Document* document, std::string& name, Tag* tag)
 {
     if (StringCompare(name, "name"))
     {
         LOGD("<Field::Output> Name\n");
 
-        if (tag->GetTagStyle() == TAG_STYLE_LOWER_CASE)
-        {
-            OutputLowerCase(outputFile, mName);
-        }
-        else if (tag->GetTagStyle() == TAG_STYLE_UPPER_CASE)
-        {
-            OutputUpperCase(outputFile, mName);
-        }
-        else
-        {
-            fprintf(outputFile, "%s",  mName.c_str());
-        }
+        tag->Output(document, mName);
     }
     else if (StringCompare(name, "type"))
     {
@@ -143,47 +132,47 @@ bool Field::Output(FILE *outputFile, std::string& name, Tag* tag)
         {
             case MFT_UINT8:
             {
-                fprintf(outputFile, "uint8_t");
+                document->Output("uint8_t");
                 break;
             }
             case MFT_UINT16:
             {
-                fprintf(outputFile, "uint16_t");
+                document->Output("uint16_t");
                 break;
             }
             case MFT_UINT32:
             {
-                fprintf(outputFile, "uint32_t");
+                document->Output("uint32_t");
                 break;
             }
             case MFT_UINT64:
             {
-                fprintf(outputFile, "uint64_t");
+                document->Output("uint64_t");
                 break;
             }
             case MFT_INT8:
             {
-                fprintf(outputFile, "int8_t");
+                document->Output("int8_t");
                 break;
             }
             case MFT_INT16:
             {
-                fprintf(outputFile, "int16_t");
+                document->Output("int16_t");
                 break;
             }
             case MFT_INT32:
             {
-                fprintf(outputFile, "int32_t");
+                document->Output("int32_t");
                 break;
             }
             case MFT_INT64:
             {
-                fprintf(outputFile, "int64_t");
+                document->Output("int64_t");
                 break;
             }
             case MFT_UUID:
             {
-                fprintf(outputFile, "uuid_t");
+                document->Output("uuid_t");
                 break;
             }
             default:
@@ -198,7 +187,7 @@ bool Field::Output(FILE *outputFile, std::string& name, Tag* tag)
 
         if (mLength > 0)
         {
-            fprintf(outputFile, "[%u]", mLength);
+            document->Output("[%u]", mLength);
         }
     }
     else

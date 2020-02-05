@@ -6,8 +6,8 @@ add_definitions(-D_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING)
 
 add_subdirectory(json)
 
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Werror")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall -Werror")
 
 #if(UNIX)
 #    add_definitions(-ggdb)
@@ -15,6 +15,7 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall")
 
 set(SRCS 
     Container.cpp
+    Document.cpp
     Formatter.cpp
     JsonReader.cpp
     Logging.cpp
@@ -27,6 +28,7 @@ set_source_files_properties(DataStore.template.cpp PROPERTIES HEADER_FILE_ONLY T
 set(HDRS
     Container.h
     CodeGenerator.h
+    Document.h
     Formatter.h
     Logging.h
     JsonReader.h

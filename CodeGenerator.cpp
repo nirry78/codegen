@@ -225,7 +225,7 @@ int Record::Output(FILE *output, size_t index, TagStyle style, TagConvert conver
 */
 
 CodeGenerator::CodeGenerator():
-    mInputFile(NULL), mOutputFile(NULL), mTemplateFile(NULL), mLogFile(NULL), mLogDest(stdout), mParseState(0),
+    mInputFile(NULL), mOutputDocument(NULL), mTemplateFile(NULL), mLogFile(NULL), mLogDest(stdout), mParseState(0),
     mParseOutputOffset(0), mParseFieldCount(0), mParseCharCount(0), mParseLineCount(0), /*mCurrentRecord(NULL),
     mRecordListHead(NULL), mRecordListTail(NULL), */mRecordNames(NULL), mNumberOfFields(0), mTagListHead(NULL),
     mTagListTail(NULL), mNextFieldType(TAG_FIELD_TYPE_NONE), mRootDataType(NULL)
@@ -240,9 +240,9 @@ CodeGenerator::~CodeGenerator()
         fclose(mInputFile);
     }
 
-    if (mOutputFile != NULL)
+    if (mOutputDocument != NULL)
     {
-        fclose(mOutputFile);
+        delete mOutputDocument;
     }
 
     if (mTemplateFile != NULL)
@@ -485,7 +485,7 @@ int CodeGenerator::GenerateOutputJson()
         {
             case TAG_TYPE_DATA:
                 LOGD("[OUT] Data\n");
-                result = tag->Output(mOutputFile);
+                tag->Output(mOutputDocument);
                 break;
             case TAG_TYPE_FOREACH_CONTAINER_BEGIN:
                 LOGD("[OUT] Foreach container begin (TAG: %c)\n", foreachContainerTag != NULL ? 'y' : 'n');
@@ -553,26 +553,18 @@ int CodeGenerator::GenerateOutputJson()
                 break;
             case TAG_TYPE_FIELD:
                 LOGD("[OUT] Field (Name: %s)\n", tag->GetName().c_str());
-                if (!mJsonReader.OutputField(mOutputFile, tag->GetName(), tag))
-                {
-                    LOGE("Not inside field loop\n");
-                    result = -1;
-                }       
+                mJsonReader.OutputField(mOutputDocument, tag->GetName(), tag);
                 break;
             case TAG_TYPE_CONTAINER:
                 LOGD("[OUT] Container (Name: %s)\n", tag->GetName().c_str());
-                if (!mJsonReader.OutputContainer(mOutputFile, tag->GetName(), tag))
-                {
-                    LOGE("Not inside container loop\n");
-                    result = -1;
-                }
+                mJsonReader.OutputContainer(mOutputDocument, tag->GetName(), tag);
                 break;
             case TAG_TYPE_FIELD_COUNT:
                 break;
             case TAG_TYPE_SEPARATOR:
                 if (mContainerDataType/* && mContainerDataType->HasMoreDataTypes()*/)
                 {
-                    fprintf(mOutputFile, ",");
+                    //fprintf(mOutputDocument, ",");
                 }
                 break;
             default:
@@ -1100,8 +1092,9 @@ int CodeGenerator::Run(int argc, char **argv)
             return 1;
         }
 
-        mOutputFile = fopen(argv[3], "wb");
-        if (mOutputFile == NULL)
+        std::string outputFilename(argv[3]);
+        mOutputDocument = new Document(outputFilename);
+        if (mOutputDocument == NULL)
         {
             LOGE("Unable to create file: %s\n", argv[3]);
             Usage(argv[0]);

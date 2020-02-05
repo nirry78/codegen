@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <string>
+#include "Document.h"
 #include "Object.h"
 #include "Formatter.h"
 #include "Logging.h"
@@ -71,8 +72,8 @@ class Tag: public Formatter
         TagStyle        GetTagStyle() { return mTagStyle; }
         bool            IsNameEqual(const char *reference);
         bool            IsValid();
-        int             Output(FILE *output);
-        int             Output(FILE *output, std::string& str);
+        void            Output(Document *document);
+        void            Output(Document *document, std::string& str);
         //int             OutputField(FILE *output, Record *record, uint32_t index);
         int             SetFieldValue(TagFieldType fieldType, const uint8_t *buffer, size_t length);
         void            SetNextTag(Tag *tag) { mNextTag = tag;}
