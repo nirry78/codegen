@@ -48,7 +48,11 @@ endif()
 add_definitions("-D_CRT_SECURE_NO_WARNINGS")
 
 add_executable(${APP_NAME} ${SRCS} ${HDRS})
-set_target_properties(${APP_NAME} PROPERTIES CXX_STANDARD 20)
+if (UNIX)
+    set_target_properties(${APP_NAME} PROPERTIES CXX_STANDARD 17)
+else()
+    set_target_properties(${APP_NAME} PROPERTIES CXX_STANDARD 20)
+endif()
 
 target_link_libraries(${APP_NAME} PRIVATE nlohmann_json::nlohmann_json)
 
