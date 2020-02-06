@@ -104,7 +104,7 @@ bool JsonReader::ForeachFieldReset(Tag *tag)
 
     if (mContainerIterator != mContainerList.end())
     {
-        result = (*mContainerIterator).ForeachFieldReset();
+        result = (*mContainerIterator).ForeachFieldReset(tag);
     }   
 
     return result;

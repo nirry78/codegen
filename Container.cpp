@@ -21,13 +21,19 @@ Container::Container(json& object)
                 LOGE("Parameters must be an array\n");
             }
         }
+        else if (!key.compare("group"))
+        {
+            mGroup = value.get<std::string>();
+
+            LOGD("  Group: %s\n", mGroup.c_str());
+        }
         else
         {
             LOGE("Container has unregonized key: %s\n", key.c_str());
         }
     }
 
-    ForeachFieldReset();
+    ForeachFieldReset(NULL);
 }
 
 Container::~Container()
@@ -35,16 +41,29 @@ Container::~Container()
 
 }
 
-bool Container::ForeachFieldReset()
+bool Container::ForeachFieldReset(Tag *tag)
 {
     mFieldIterator = mFieldList.begin();
+    mIteratorTag = tag;
+
+    if (tag)
+    {
+        (*mFieldIterator).AcceptNameAndGroup(tag);
+    }
 
     return (mFieldIterator != mFieldList.end());
 }
 
 bool Container::ForeachFieldNext()
 {
-    return ((++mFieldIterator) != mFieldList.end());
+    ++mFieldIterator;
+
+    if (mIteratorTag && mFieldIterator != mFieldList.end())
+    {
+        (*mFieldIterator).AcceptNameAndGroup(mIteratorTag);
+    }
+
+    return (mFieldIterator != mFieldList.end());
 }
 
 void Container::Output(Document* document, std::string& name, Tag* tag)

@@ -11,17 +11,19 @@
 class Document: public Object
 {
     private:
-        FILE*   mFileHandle;
-        char*   mOutputBuffer;
-        size_t  mOutputOffset;
-        bool    mSaved;
-        char    mStringBuffer[DOCUMENT_STRING_LENGTH];
-        int     mStringOffset;
+        FILE*       mFileHandle;
+        uint32_t    mCurrentLineOffset;
+        char*       mOutputBuffer;
+        size_t      mOutputOffset;
+        bool        mSaved;
+        char        mStringBuffer[DOCUMENT_STRING_LENGTH];
+        int         mStringOffset;
     public:
         Document(std::string& filename);
         virtual ~Document();
 
         void    Append(const char *format, ...);
+        void    Fill(const char c, uint32_t width);
         void    Output(const char *format, ...);
         void    Output(std::string& str, uint32_t width = 0);
         void    OutputBuffer(const char *buffer, size_t bufferLength);

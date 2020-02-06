@@ -43,6 +43,7 @@ class Field: public Formatter
 {
     private:
         std::string         mName;
+        std::string         mGroups;
         std::string         mValueStr;
         uint32_t            mLength;
         DataTypeVariant     mValue;
@@ -57,6 +58,7 @@ class Field: public Formatter
     public:
                             Field(json& object);
         virtual             ~Field();   
+        bool                AcceptNameAndGroup(Tag *tag);
         bool                Output(Document* document, std::string& name, Tag* tag);
 };
 

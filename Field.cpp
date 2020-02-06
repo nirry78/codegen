@@ -50,6 +50,19 @@ Field::Field(json& object):
                 LOGD("<Field::Field> Length found with unexpected type\n");
             }            
         }
+        else if (!key.compare("groups"))
+        {
+            if (value.is_string())
+            {
+                mGroups = value.get<std::string>();            
+
+                LOGD("<Field::Field> Groups: %s\n", mGroups.c_str());
+            }
+            else
+            {
+                LOGE("Expecting string\n");
+            }            
+        }
         else
         {
             LOGD("<Field::Field> Unknown entry: %s\n", key.c_str());
@@ -61,6 +74,11 @@ Field::Field(json& object):
 Field::~Field()
 {
 
+}
+
+bool Field::AcceptNameAndGroup(Tag *tag)
+{
+    return tag->AcceptNameAndGroup(mName, mGroups);
 }
 
 void Field::DecodeFieldType(json& object)

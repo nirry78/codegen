@@ -1,7 +1,7 @@
 #include "Document.h"
 
 Document::Document(std::string& filename):
-    mOutputOffset(0), mSaved(false), mStringOffset(0)
+    mCurrentLineOffset(0), mOutputOffset(0), mSaved(false), mStringOffset(0)
 {
     mFileHandle = fopen(filename.c_str(), "wb");
     mOutputBuffer = (char*)malloc(DOCUMENT_OUTPUT_LENGTH);
@@ -27,6 +27,15 @@ void Document::Append(const char *format, ...)
     va_end(va);
 
     OutputBuffer(mStringBuffer, length);
+}
+
+void Document::Fill(const char c, uint32_t width)
+{
+    while (mCurrentLineOffset < width)
+    {
+        mOutputBuffer[mOutputOffset++] = c;
+        mCurrentLineOffset++;
+    }
 }
 
 void Document::Output(const char *format, ...)
@@ -57,9 +66,20 @@ void Document::OutputBuffer(const char *buffer, size_t bufferLength)
 {
     if (mFileHandle && mOutputBuffer)
     {
-        memcpy(&mOutputBuffer[mOutputOffset], buffer, bufferLength);
+        for (uint32_t index = 0; index < bufferLength; index++)
+        {
+            if (buffer[index] == '\r' || buffer[index] == '\n')
+            {
+                mCurrentLineOffset = 0;
+            }
+            else
+            {
+                mCurrentLineOffset++;
+            }
+            
+            mOutputBuffer[mOutputOffset++] = buffer[index];
+        }
 
-        mOutputOffset += bufferLength;
         mSaved = false;
     }
 }

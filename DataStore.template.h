@@ -8,7 +8,7 @@
 #include "Platform.h"
 
 @foreachcontainer
-#define @container{name = 'name', style = 'upper_case'}_IDENTIFIER
+#define @container{name = 'name', style = 'upper_case'}_IDENTIFIER @container{name = 'name', alignment='60'}
 @endforeachcontainer
 
 @foreachcontainer
@@ -16,7 +16,7 @@
 class @container{name = 'name'}
 {
     private:
-@ForEachField
+@ForEachField{group = 'parameter'}
         @Field{name='type'} m@Field{name='name'}@Field{name='length'};
 @EndForEachField
 

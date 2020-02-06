@@ -34,7 +34,9 @@ typedef enum {
     TAG_FIELD_TYPE_WIDTH,
     TAG_FIELD_TYPE_STYLE,
     TAG_FIELD_TYPE_CONVERT,
-    TAG_FIELD_TYPE_LENGTH
+    TAG_FIELD_TYPE_LENGTH,
+    TAG_FIELD_TYPE_ALIGNMENT,
+    TAG_FIELD_TYPE_GROUP,
 } TagFieldType;
 
 typedef enum {
@@ -60,11 +62,14 @@ class Tag: public Formatter
         TagStyle        mTagStyle;
         TagConvert      mTagConvert;
         uint32_t        mWidth;
+        uint32_t        mAlignment;
         std::string     mName;
         std::string     mLength;
+        std::string     mGroup;
     public:
                         Tag(TagType tag_type, const uint8_t *buffer, size_t length);
                         ~Tag();
+        bool            AcceptNameAndGroup(std::string& name, std::string& group);
         void            Dump(FILE *output);
         std::string&    GetName() { return mName; }
         Tag*            GetNextTag() { return mNextTag; }

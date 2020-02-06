@@ -308,6 +308,14 @@ int CodeGenerator::FieldName(const uint8_t *buffer, size_t buffer_length)
     {
         mNextFieldType = TAG_FIELD_TYPE_LENGTH;
     }
+    else if (StringCompare(compareString, "Alignment"))
+    {
+        mNextFieldType = TAG_FIELD_TYPE_ALIGNMENT;
+    }    
+    else if (StringCompare(compareString, "Group"))
+    {
+        mNextFieldType = TAG_FIELD_TYPE_GROUP;
+    }        
     else
     {
         LOGD("<CodeGenerator::FieldName> Not supported: %s\n", compareString.c_str());
@@ -1134,12 +1142,19 @@ int CodeGenerator::Run(int argc, char **argv)
             return 1;
         }
 
-        result = GenerateOutputJson();
-        if (result != 0)
+        try
         {
-            LOGE("Unable to generate output file\n");
-            Usage(argv[0]);
-            return 1;
+            result = GenerateOutputJson();
+            if (result != 0)
+            {
+                LOGE("Unable to generate output file\n");
+                Usage(argv[0]);
+                return 1;
+            }
+        }
+        catch(const std::exception& e)
+        {
+            std::cerr << e.what() << '\n';
         }
     }
 

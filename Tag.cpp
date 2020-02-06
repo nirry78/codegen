@@ -6,7 +6,8 @@ Tag::Tag(TagType tag_type, const uint8_t *buffer, size_t length):
     mTagType(tag_type),
     mTagStyle(TAG_STYLE_STANDARD),
     mTagConvert(TAG_CONVERT_NONE),
-    mWidth(0)
+    mWidth(0),
+    mAlignment(0)
 {
     mBuffer = new uint8_t[length];
     if (mBuffer != NULL)
@@ -21,6 +22,58 @@ Tag::~Tag()
     {
         delete mBuffer;
     }
+}
+
+bool Tag::AcceptNameAndGroup(std::string& name, std::string& groups)
+{
+    bool result = true;
+
+    if (mName.length() > 0)
+    {
+        result = StringCompare(name, mName);
+    }
+
+    if (mGroup.length() > 0)
+    {
+        if (groups.length() > 0)
+        {
+            size_t pos = 0;
+            size_t next_pos;
+
+            do
+            {
+                next_pos = groups.find_first_of(',', pos);
+                if (next_pos == std::string::npos)
+                {
+                    std::string group = groups.substr(pos, groups.length());
+                    if (StringCompare(group, mGroup))
+                    {
+                        result = true;
+                    }
+                    break;
+                }
+                else
+                {
+                    std::string group = groups.substr(next_pos, groups.length());
+                    if (StringCompare(group, mGroup))
+                    {
+                        result = true;
+                        break;
+                    }
+                }
+                pos = next_pos;
+            } while (true);            
+        }
+        else
+        {
+            result = false;
+        }        
+    }
+
+    LOGD("<Tag::AcceptNameAndGroup> Name: [%s eq %s], Group: [%s in %s] - %s\n", 
+         name.c_str(), mName.c_str(), mGroup.c_str(), groups.c_str(), result ? "accepted" : "rejected");
+
+    return result;
 }
 
 void Tag::Dump(FILE *output)
@@ -100,6 +153,11 @@ void Tag::Output(Document *document)
 
 void Tag::Output(Document *document, std::string& str)
 {
+    if (mAlignment)
+    {
+        document->Fill(' ', mAlignment);
+    }
+
     switch (mTagStyle)
     {
         case TAG_STYLE_CAMEL_CASE:
@@ -179,6 +237,18 @@ int Tag::SetFieldValue(TagFieldType fieldType, const uint8_t *buffer, size_t len
         {
             mWidth = strtol(inputString.c_str(), NULL, 0);
             LOGD("<Tag::SetFieldValue> Width: %u\n", mWidth);
+            break;
+        }
+        case TAG_FIELD_TYPE_ALIGNMENT:
+        {
+            mAlignment = strtol(inputString.c_str(), NULL, 0);
+            LOGD("<Tag::SetFieldValue> Width: %u\n", mWidth);
+            break;
+        }
+        case TAG_FIELD_TYPE_GROUP:
+        {
+            mGroup.assign((const char*)buffer, length);
+            LOGD("<Tag::SetFieldValue> Group: %s\n", mGroup.c_str());            
             break;
         }
         default:
