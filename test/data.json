@@ -1,0 +1,54 @@
+{
+    "version": "1.0",
+    "containers": [
+        {
+            "name": "AuthenticateRandomData",
+            "parameters": [
+                {
+                    "name": "Identifier",
+                    "type": "uuid",
+                    "value": "69a74833-5bde-4d53-bda0-89f5d8f88d54"
+                },
+                {
+                    "name": "Length",
+                    "type": "uint32_t",
+                    "value": "sizeof_this"
+                },
+                {
+                    "name": "RandomValue",
+                    "groups": "parameter",
+                    "type": [
+                        {
+                            "type": "uint8_t",
+                            "length": 32
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "AuthenticateChallengeRequest",
+            "parameters": [
+                {
+                    "name": "Identifier",
+                    "type": "uuid",
+                    "value": "69a74833-5bde-4d53-bda0-89f5d8f88d54"
+                },
+                {
+                    "name": "Length",
+                    "type": "uint32_t",
+                    "value": "sizeof_this"
+                },
+                {
+                    "name": "ChallengeValue",
+                    "type": [
+                        {
+                            "type": "uint8_t",
+                            "length": 32
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}
