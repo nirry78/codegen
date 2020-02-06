@@ -6,8 +6,10 @@ add_definitions(-D_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING)
 
 add_subdirectory(json)
 
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Werror")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall -Werror")
+if (UNIX)
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Werror")
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall -Werror")
+endif()
 
 #if(UNIX)
 #    add_definitions(-ggdb)
@@ -46,7 +48,7 @@ endif()
 add_definitions("-D_CRT_SECURE_NO_WARNINGS")
 
 add_executable(${APP_NAME} ${SRCS} ${HDRS})
-set_target_properties(${APP_NAME} PROPERTIES CXX_STANDARD 17)
+set_target_properties(${APP_NAME} PROPERTIES CXX_STANDARD 20)
 
 target_link_libraries(${APP_NAME} PRIVATE nlohmann_json::nlohmann_json)
 

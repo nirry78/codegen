@@ -56,3 +56,5 @@ output/
 yaml-cpp
 json
 log.txt
+.vs/
+out/
