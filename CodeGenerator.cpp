@@ -544,8 +544,7 @@ int CodeGenerator::GenerateOutputJson()
                 }
                 else
                 {
-                    LOGE("Foreach tag found inside loop\n");
-                    result = -1;
+                    foreachFieldTag = NULL;
                 }
                 break;
             case TAG_TYPE_FOREACH_FIELD_END:

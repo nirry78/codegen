@@ -1,6 +1,7 @@
 #include "Container.h"
 
-Container::Container(json& object)
+Container::Container(json& object):
+    mFieldCount(0)
 {
     for (auto& [key, value] : object.items()) 
     {
@@ -43,27 +44,65 @@ Container::~Container()
 
 bool Container::ForeachFieldReset(Tag *tag)
 {
+    bool result = false;
+
     mFieldIterator = mFieldList.begin();
     mIteratorTag = tag;
 
-    if (tag)
+    if (mFieldIterator != mFieldList.end())
     {
-        (*mFieldIterator).AcceptNameAndGroup(tag);
+        if (tag)
+        {
+            if (!(*mFieldIterator).AcceptNameAndGroup(tag))
+            {
+                result = ForeachFieldNext();
+            }
+            else
+            {
+                result = true;
+            }            
+        }
+        else
+        {
+            result = true;
+        }    
     }
 
-    return (mFieldIterator != mFieldList.end());
+    mFieldCount = 0;
+
+    return result;
 }
 
 bool Container::ForeachFieldNext()
 {
+    bool result = false;
+
     ++mFieldIterator;
 
-    if (mIteratorTag && mFieldIterator != mFieldList.end())
+    if (mIteratorTag)
     {
-        (*mFieldIterator).AcceptNameAndGroup(mIteratorTag);
+        while (mFieldIterator != mFieldList.end())
+        {
+            result = (*mFieldIterator).AcceptNameAndGroup(mIteratorTag);
+            if (result)
+            {
+                break;
+            }
+            
+            ++mFieldIterator;
+        }
+    }
+    else
+    {
+        result = (mFieldIterator != mFieldList.end());
     }
 
-    return (mFieldIterator != mFieldList.end());
+    if (result)
+    {
+        mFieldCount++;
+    }
+    
+    return result;
 }
 
 void Container::Output(Document* document, std::string& name, Tag* tag)

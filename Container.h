@@ -20,6 +20,7 @@ class Container: public Formatter
         std::list<Field>             mFieldList;
         std::list<Field>::iterator   mFieldIterator;
         Tag*                         mIteratorTag;
+        uint32_t                     mFieldCount;
 
         void                    ParseParameters(json& object);
     public:
