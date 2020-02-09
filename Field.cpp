@@ -205,7 +205,8 @@ bool Field::Output(Document* document, std::string& name, Tag* tag)
 
         if (mLength > 0)
         {
-            document->Output("[%u]", mLength);
+            tag->Output(document, "%u", mLength);
+            //document->Output("[%u]", mLength);
         }
     }
     else

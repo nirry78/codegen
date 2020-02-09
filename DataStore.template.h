@@ -17,7 +17,7 @@ class @container{name = 'name'}
 {
     private:
 @ForEachField{group = 'parameter'}
-        @Field{name='type'} m@Field{name='name'}@Field{name='length'};
+        @Field{name='type'} m@Field{name='name'}@Field{name='length', style='array'};
 @EndForEachField
 
     public:

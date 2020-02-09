@@ -70,6 +70,9 @@ bool Container::ForeachFieldReset(Tag *tag)
 
     mFieldCount = 0;
 
+    LOGD("<Container::ForeachFieldReset> count: %u, result: %u\n",
+          mFieldCount, result);
+
     return result;
 }
 
@@ -102,6 +105,9 @@ bool Container::ForeachFieldNext()
         mFieldCount++;
     }
     
+    LOGD("<Container::ForeachFieldNext> count: %u, result: %u\n",
+          mFieldCount, result);
+
     return result;
 }
 

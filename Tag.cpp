@@ -151,6 +151,38 @@ void Tag::Output(Document *document)
     document->OutputBuffer((const char*)mBuffer, mBufferLength);
 }
 
+void Tag::Output(Document *document, const char* format, ...)
+{
+    va_list va;
+    int length, offset = 0;
+    char buffer[256];
+
+    buffer[255] = 0;
+
+    if (mTagStyle == TAG_STYLE_ARRAY)
+    {
+        buffer[offset++] = '[';
+    }
+
+    va_start(va, format);
+    length = vsnprintf(buffer, sizeof(buffer) - 1 - offset, format, va);
+    va_end(va);
+
+    offset += length;
+
+    if (mTagStyle == TAG_STYLE_ARRAY && length < (int)(sizeof(buffer) - 1))
+    {
+        buffer[offset++] = ']';
+    }
+
+    if (offset)
+    {
+        std::string str(buffer, offset);
+
+        Output(document, str);
+    }
+}
+
 void Tag::Output(Document *document, std::string& str)
 {
     if (mAlignment)

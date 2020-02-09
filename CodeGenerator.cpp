@@ -479,6 +479,7 @@ int CodeGenerator::GenerateOutputJson()
     Tag *foreachContainerTag = NULL;
     Tag *foreachFieldTag     = NULL;
     int result               = 0;
+    bool inFieldLoop         = false;
 
     LOGI("Generating output...\n");
 
@@ -492,8 +493,12 @@ int CodeGenerator::GenerateOutputJson()
         switch (tag->GetTagType())
         {
             case TAG_TYPE_DATA:
-                LOGD("[OUT] Data\n");
-                tag->Output(mOutputDocument);
+                if ((inFieldLoop && foreachFieldTag) || !inFieldLoop)            
+                {
+                    LOGD("[OUT] Data (InFieldLoop: %u, FieldMatched: %c))\n",
+                         inFieldLoop, foreachFieldTag != NULL ? 'y' : 'n');
+                    tag->Output(mOutputDocument);
+                }
                 break;
             case TAG_TYPE_FOREACH_CONTAINER_BEGIN:
                 LOGD("[OUT] Foreach container begin (TAG: %c)\n", foreachContainerTag != NULL ? 'y' : 'n');
@@ -502,11 +507,6 @@ int CodeGenerator::GenerateOutputJson()
                     LOGE("Foreach tag found inside container loop\n");
                     result = -1;
                 }
-                /*else if (mNamespaceDataType == NULL)
-                {
-                    LOGE("No namespace selected\n");
-                    result = -1;
-                }*/
                 else if (mFieldDataType != NULL)
                 {
                     LOGE("Internal error as field is currently selected\n");
@@ -537,7 +537,6 @@ int CodeGenerator::GenerateOutputJson()
                 LOGD("[OUT] Foreach container end (Continue: %c)\n", foreachContainerTag != NULL ? 'y' : 'n');
                 break;
             case TAG_TYPE_FOREACH_FIELD_BEGIN:
-                LOGD("[OUT] Foreach field begin (TAG: %c)\n", foreachContainerTag != NULL ? 'y' : 'n');
                 if (mJsonReader.ForeachFieldReset(tag))
                 {
                     foreachFieldTag = tag;
@@ -546,6 +545,10 @@ int CodeGenerator::GenerateOutputJson()
                 {
                     foreachFieldTag = NULL;
                 }
+                inFieldLoop = true;
+                LOGD("[OUT] Foreach field begin (TAG: %c, Matched: %c)\n", 
+                     foreachContainerTag != NULL ? 'y' : 'n', 
+                     foreachFieldTag != NULL ? 'y' : 'n');
                 break;
             case TAG_TYPE_FOREACH_FIELD_END:
                 if (mJsonReader.ForeachFieldNext())
@@ -555,12 +558,16 @@ int CodeGenerator::GenerateOutputJson()
                 else
                 {
                     foreachFieldTag = NULL;
+                    inFieldLoop = false;
                 }
                 LOGD("[OUT] Foreach field end (Continue: %c)\n", foreachFieldTag != NULL ? 'y' : 'n');
                 break;
             case TAG_TYPE_FIELD:
-                LOGD("[OUT] Field (Name: %s)\n", tag->GetName().c_str());
-                mJsonReader.OutputField(mOutputDocument, tag->GetName(), tag);
+                if ((inFieldLoop && foreachFieldTag) || !inFieldLoop)            
+                {
+                    LOGD("[OUT] Field (Name: %s)\n", tag->GetName().c_str());
+                    mJsonReader.OutputField(mOutputDocument, tag->GetName(), tag);
+                }
                 break;
             case TAG_TYPE_CONTAINER:
                 LOGD("[OUT] Container (Name: %s)\n", tag->GetName().c_str());

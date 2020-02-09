@@ -45,6 +45,7 @@ typedef enum {
     TAG_STYLE_LOWER_CASE,
     TAG_STYLE_CAMEL_CASE,
     TAG_STYLE_LOWER_CAMEL_CASE,
+    TAG_STYLE_ARRAY,
 } TagStyle;
 
 typedef enum {
@@ -79,6 +80,7 @@ class Tag: public Formatter
         bool            IsValid();
         void            Output(Document *document);
         void            Output(Document *document, std::string& str);
+        void            Output(Document *document, const char* format, ...);
         //int             OutputField(FILE *output, Record *record, uint32_t index);
         int             SetFieldValue(TagFieldType fieldType, const uint8_t *buffer, size_t length);
         void            SetNextTag(Tag *tag) { mNextTag = tag;}
