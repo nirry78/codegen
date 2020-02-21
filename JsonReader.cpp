@@ -2,7 +2,8 @@
 #include <fstream>      // std::ifstream
 #include "JsonReader.h"
 
-JsonReader::JsonReader()
+JsonReader::JsonReader():
+    mContainerCount(0)
 {
     mContainerList.clear();
 }
@@ -89,13 +90,21 @@ bool JsonReader::SelectNamespace(const char *value)
 bool JsonReader::ForeachContainerReset(Tag *tag)
 {
     mContainerIterator = mContainerList.begin();
+    mContainerCount = 0;
 
     return (mContainerIterator != mContainerList.end());
 }
 
 bool JsonReader::ForeachContainerNext()
 {
-    return ((++mContainerIterator) != mContainerList.end());
+    bool result = ((++mContainerIterator) != mContainerList.end());
+
+    if (result)
+    {
+        mContainerCount++;
+    }
+
+    return result;
 }
 
 bool JsonReader::ForeachFieldReset(Tag *tag)
@@ -126,7 +135,7 @@ void JsonReader::OutputContainer(Document* document, std::string& name, Tag* tag
 {
     if (mContainerIterator != mContainerList.end())
     {
-        (*mContainerIterator).Output(document, name, tag);
+        (*mContainerIterator).Output(document, name, tag, mContainerCount);
     }
 }
 

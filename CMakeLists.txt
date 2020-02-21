@@ -74,4 +74,4 @@ add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/DataStore.cpp
 
 include_directories(${CMAKE_SOURCE_DIR})
 
-add_executable(${TEST_APP_NAME} ${CMAKE_BINARY_DIR}/DataStore.cpp ${CMAKE_BINARY_DIR}/DataStore.h)
+add_executable(${TEST_APP_NAME} test/TestRunner.cxx ${CMAKE_BINARY_DIR}/DataStore.cpp ${CMAKE_BINARY_DIR}/DataStore.h)

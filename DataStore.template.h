@@ -8,7 +8,7 @@
 #include "Platform.h"
 
 @foreachcontainer
-#define @container{name = 'name', style = 'upper_case'}_IDENTIFIER @container{name = 'name', alignment='60'}
+#define @container{name = 'name', style = 'upper_case'}_IDENTIFIER @container{name = 'count', alignment='60'}
 @endforeachcontainer
 
 @foreachcontainer

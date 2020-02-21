@@ -19,6 +19,7 @@ class JsonReader
         json                            mJsonObject;
         std::list<Container>            mContainerList;
         std::list<Container>::iterator  mContainerIterator;
+        uint32_t                        mContainerCount;
 
         void    VerifyContainer(json& object);
         void    VerifyParameters(Container& container, json& object);

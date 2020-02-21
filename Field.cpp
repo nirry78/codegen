@@ -134,7 +134,7 @@ void Field::DecodeFieldType(json& object)
     }
 }
 
-bool Field::Output(Document* document, std::string& name, Tag* tag)
+bool Field::Output(Document* document, std::string& name, Tag* tag, uint32_t count)
 {
     if (StringCompare(name, "name"))
     {
@@ -206,8 +206,13 @@ bool Field::Output(Document* document, std::string& name, Tag* tag)
         if (mLength > 0)
         {
             tag->Output(document, "%u", mLength);
-            //document->Output("[%u]", mLength);
         }
+    }
+    else if (StringCompare(name, "count"))
+    {
+        LOGD("<Field::Output> Count: %u\n", count);
+
+        tag->Output(document, "%u", count);
     }
     else
     {

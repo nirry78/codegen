@@ -111,15 +111,24 @@ bool Container::ForeachFieldNext()
     return result;
 }
 
-void Container::Output(Document* document, std::string& name, Tag* tag)
+void Container::Output(Document* document, std::string& name, Tag* tag, uint32_t count)
 {
-    if (tag)
+    LOGD("<Container::Output> name: %s, count: %u\n", name.c_str(), count);
+
+    if (StringCompare(name, "name"))
     {
-        tag->Output(document, mName);
+        if (tag)
+        {
+            tag->Output(document, mName);
+        }
+        else
+        {
+            document->Output(mName);
+        }
     }
-    else
+    else if (StringCompare(name, "count") && tag)
     {
-        document->Output(mName);
+        tag->Output(document, "%u", count);
     }
 }
 
@@ -127,7 +136,7 @@ void Container::OutputField(Document* document, std::string& name, Tag* tag)
 {
     if (mFieldIterator != mFieldList.end())
     {
-        mFieldIterator->Output(document, name, tag);
+        mFieldIterator->Output(document, name, tag, mFieldCount);
     }
 }
 

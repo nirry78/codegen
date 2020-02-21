@@ -59,7 +59,7 @@ class Field: public Formatter
                             Field(json& object);
         virtual             ~Field();   
         bool                AcceptNameAndGroup(Tag *tag);
-        bool                Output(Document* document, std::string& name, Tag* tag);
+        bool                Output(Document* document, std::string& name, Tag* tag, uint32_t count);
 };
 
 #endif /* _FIELD_H */

@@ -3,7 +3,7 @@
 @foreachcontainer
 
 @container{name = 'name'}::@container{name = 'name'}():
-@foreachfield
+@ForEachField{group = 'parameter'}
     m@field{name='name'}(@field{name='default'})@separator
 @endforeachfield
 {
@@ -18,7 +18,7 @@
 void @container{name = 'name'}::Dump(FILE *dest)
 {
 @foreachfield
-    fprintf(dest, "@field{name='name'} = @field{name='format'}\n", m@field{name = 'name'});
+//    fprintf(dest, "@field{name='name'} = @field{name='format'}\n", m@field{name = 'name'});
 @endforeachfield
 }
 
@@ -33,12 +33,16 @@ uint32_t @container{name = 'name'}::Serialize(uint8_t *buffer, uint32_t bufferLe
 
     }
 @endforeachfield
+
+    return length;
 }
 
 uint32_t @container{name = 'name'}::Unserialize(uint8_t *buffer, uint32_t bufferLength)
 {
 @foreachfield
 @endforeachfield
+
+    return bufferLength;
 }
 
 @endforeachcontainer

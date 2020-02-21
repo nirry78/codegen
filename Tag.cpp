@@ -165,7 +165,7 @@ void Tag::Output(Document *document, const char* format, ...)
     }
 
     va_start(va, format);
-    length = vsnprintf(buffer, sizeof(buffer) - 1 - offset, format, va);
+    length = vsnprintf(&buffer[offset], sizeof(buffer) - 1 - offset, format, va);
     va_end(va);
 
     offset += length;
@@ -258,6 +258,12 @@ int Tag::SetFieldValue(TagFieldType fieldType, const uint8_t *buffer, size_t len
                 mTagStyle = TAG_STYLE_LOWER_CAMEL_CASE;
 
                 LOGD("<Tag::SetFieldValue> Style: Lowercase\n");
+            }
+            else if (StringCompare(inputString, "array"))
+            {
+                mTagStyle = TAG_STYLE_ARRAY;
+
+                LOGD("<Tag::SetFieldValue> Style: Array\n");
             }
             else
             {

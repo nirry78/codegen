@@ -30,7 +30,7 @@ class Container: public Formatter
         bool                    ForeachFieldReset(Tag *tag);
         bool                    ForeachFieldNext();
         bool                    IsValid();
-        void                    Output(Document* document, std::string& name, Tag* tag);
+        void                    Output(Document* document, std::string& name, Tag* tag, uint32_t count);
         void                    OutputField(Document* document, std::string& name, Tag* tag);
         void                    SetName(std::string& name) { mName = name; }
 };
