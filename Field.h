@@ -20,7 +20,9 @@ typedef enum {
     MFT_INT16,
     MFT_INT32,
     MFT_INT64,
+    MFT_FLOAT,
     MFT_UUID,
+    MFT_STRING,
 } DataType;
 
 typedef struct   
@@ -36,6 +38,9 @@ typedef struct
         int16_t     i16;
         int32_t     i32;
         int64_t     i64;
+        float       f32;
+        std::string *string;
+        uint8_t     uuid[16];
     } d;    
 } DataTypeVariant;
 
@@ -44,7 +49,6 @@ class Field: public Formatter
     private:
         std::string         mName;
         std::string         mGroups;
-        std::string         mValueStr;
         uint32_t            mLength;
         DataTypeVariant     mValue;
         DataTypeVariant     mMinValue;
@@ -53,10 +57,13 @@ class Field: public Formatter
         DataType            mType;
         uint32_t            mSize;
         
-
+        bool                ConvertToUuid(std::string &str, DataTypeVariant *dest);
+        void                CopyVariant(DataTypeVariant *dest, const DataTypeVariant *src);
         void                DecodeFieldType(json& object);
+        void                OutputVariant(Tag* tag, Document* document, const DataTypeVariant *value);
     public:
                             Field(json& object);
+                            Field(const Field& field);
         virtual             ~Field();   
         bool                AcceptNameAndGroup(Tag *tag);
         bool                Output(Document* document, std::string& name, Tag* tag, uint32_t count);

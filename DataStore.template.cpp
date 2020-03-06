@@ -2,7 +2,7 @@
 
 @foreachcontainer
 
-@container{name = 'name'}::@container{name = 'name'}():
+@container{name = 'name'}::@container{name = 'name'}(@ForEachField{group = 'parameter'}@Field{name='type', style='reference'} @Field{name='name', style='lower_camel_case'}@EndForEachField):
 @ForEachField{group = 'parameter'}
     m@field{name='name'}(@field{name='default'})@separator
 @endforeachfield

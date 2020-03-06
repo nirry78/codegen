@@ -170,9 +170,16 @@ void Tag::Output(Document *document, const char* format, ...)
 
     offset += length;
 
-    if (mTagStyle == TAG_STYLE_ARRAY && length < (int)(sizeof(buffer) - 1))
+    if (length < (int)(sizeof(buffer) - 1))
     {
-        buffer[offset++] = ']';
+        if (mTagStyle == TAG_STYLE_ARRAY)
+        {
+            buffer[offset++] = ']';
+        }
+        else if (mTagStyle == TAG_STYLE_REFERENCE)
+        {
+            buffer[offset++] = '*';
+        }
     }
 
     if (offset)
@@ -264,6 +271,12 @@ int Tag::SetFieldValue(TagFieldType fieldType, const uint8_t *buffer, size_t len
                 mTagStyle = TAG_STYLE_ARRAY;
 
                 LOGD("<Tag::SetFieldValue> Style: Array\n");
+            }
+            else if (StringCompare(inputString, "reference"))
+            {
+                mTagStyle = TAG_STYLE_REFERENCE;
+
+                LOGD("<Tag::SetFieldValue> Style: Reference\n");
             }
             else
             {

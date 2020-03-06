@@ -15,7 +15,7 @@
         {
             "label": "Release build",
             "type": "shell",
-            "command": "make -s -C output/release -j14",
+            "command": "make -s -C output/release -j14 install",
             "problemMatcher": { "base": "$gcc", "fileLocation": "absolute" },
             "presentation": {
                 "reveal": "silent"

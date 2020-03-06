@@ -46,6 +46,7 @@ typedef enum {
     TAG_STYLE_CAMEL_CASE,
     TAG_STYLE_LOWER_CAMEL_CASE,
     TAG_STYLE_ARRAY,
+    TAG_STYLE_REFERENCE,
 } TagStyle;
 
 typedef enum {

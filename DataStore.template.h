@@ -21,7 +21,7 @@ class @container{name = 'name'}
 @EndForEachField
 
     public:
-        @container{name = 'name'}();
+        @container{name = 'name'}(@ForEachField{group = 'parameter'}@Field{name='type', style='reference'} m@Field{name='name'}@EndForEachField);
         ~@container{name = 'name'}();
 
         void        Dump(FILE *dest);
